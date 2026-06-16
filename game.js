@@ -263,7 +263,7 @@ function spawnVillain() {
 
 function spawnItem(kindOverride) {
   const road = roadBounds();
-  const kind = kindOverride || (Math.random() > 0.44 ? "bell" : "water");
+  const kind = kindOverride || (Math.random() < 0.73 ? "bell" : "water");
   const x = rand(road.left + 36, road.right - 36);
   game.items.push({
     kind,
