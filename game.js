@@ -10,6 +10,8 @@ const startBtn = document.getElementById("startBtn");
 const pauseBtn = document.getElementById("pauseBtn");
 const bellBtn = document.getElementById("bellBtn");
 const specialBtn = document.getElementById("specialBtn");
+const transformCutscene = document.getElementById("transformCutscene");
+const transformVideo = document.getElementById("transformVideo");
 const nameEntry = document.getElementById("nameEntry");
 const playerNameInput = document.getElementById("playerName");
 const saveScoreBtn = document.getElementById("saveScoreBtn");
@@ -25,6 +27,7 @@ const LEADERBOARD_KEY = "hangang-villain-rider-leaderboard";
 const MAX_LEADERBOARD = 10;
 const MAX_NAME_UNITS = 20;
 let pendingScore = null;
+let transformCutsceneTimeout = null;
 
 const gameArt = {
   background: new Image(),
@@ -110,6 +113,8 @@ const game = {
   itemTimer: 2.5,
   invincible: 0,
   transformTimer: 0,
+  transformCutscene: false,
+  transformVideoSeen: false,
   riderTimer: 0,
   riderFlash: 0,
   bossLevel: 0,
@@ -156,6 +161,8 @@ function resetGame() {
   game.itemTimer = 3.1;
   game.invincible = 0;
   game.transformTimer = 0;
+  game.transformCutscene = false;
+  game.transformVideoSeen = false;
   game.riderTimer = 0;
   game.riderFlash = 0;
   game.bossLevel = 0;
@@ -176,6 +183,7 @@ function resetGame() {
   game.player.x = (road.left + road.right) / 2;
   game.player.y = road.bottom - 82;
   pendingScore = null;
+  hideTransformCutscene();
   nameEntry.hidden = true;
   overlay.hidden = true;
   pauseBtn.textContent = "II";
@@ -188,7 +196,7 @@ function updateHud() {
   healthEl.textContent = Math.max(0, Math.round(game.health));
   bellsEl.textContent = game.bells;
   bellBtn.disabled = !game.running || game.paused || game.over || game.bells <= 0 || game.bellCooldown > 0;
-  specialBtn.disabled = !game.running || game.paused || game.over || game.bells < 10 || game.riderTimer > 0 || game.transformTimer > 0;
+  specialBtn.disabled = !game.running || game.paused || game.over || game.bells < 10 || game.riderTimer > 0 || game.transformTimer > 0 || game.transformCutscene;
   specialBtn.classList.toggle("ready", !specialBtn.disabled);
   specialBtn.textContent = game.riderTimer > 0 ? Math.ceil(Math.min(10, game.riderTimer)) : "\ubcc0\uc2e0";
 }
@@ -494,10 +502,23 @@ function ringBell() {
 }
 
 function useSpecial() {
-  if (!game.running || game.paused || game.over || game.bells < 10 || game.riderTimer > 0 || game.transformTimer > 0) return;
+  if (!game.running || game.paused || game.over || game.bells < 10 || game.riderTimer > 0 || game.transformTimer > 0 || game.transformCutscene) return;
   game.bells -= 10;
-  game.transformTimer = 1.85;
-  game.riderTimer = 11.85;
+
+  if (!game.transformVideoSeen && transformVideo) {
+    game.transformVideoSeen = true;
+    playTransformCutscene();
+  } else {
+    playRideOnVoice();
+    activateRoadRider(false);
+  }
+
+  updateHud();
+}
+
+function activateRoadRider(showTransformScene) {
+  game.transformTimer = showTransformScene ? 1.85 : 0;
+  game.riderTimer = showTransformScene ? 11.85 : 10;
   game.riderFlash = 0.9;
   game.invincible = Math.max(game.invincible, 12);
   burst(game.player.x, game.player.y - 18, "#68e5ff", 34, 380);
@@ -511,6 +532,68 @@ function useSpecial() {
     color: "#dffcff",
   });
   updateHud();
+}
+
+function playTransformCutscene() {
+  if (!transformCutscene || !transformVideo) {
+    activateRoadRider(false);
+    return;
+  }
+
+  game.transformCutscene = true;
+  transformCutscene.hidden = false;
+  transformVideo.currentTime = 0;
+  transformVideo.muted = true;
+  transformVideo.volume = 1;
+
+  clearTimeout(transformCutsceneTimeout);
+  transformCutsceneTimeout = setTimeout(() => finishTransformCutscene(true), 6500);
+
+  const playPromise = transformVideo.play();
+  if (playPromise && typeof playPromise.catch === "function") {
+    playPromise.catch(() => {
+      clearTimeout(transformCutsceneTimeout);
+      transformCutsceneTimeout = setTimeout(() => finishTransformCutscene(true), 1800);
+    });
+  }
+  updateHud();
+}
+
+function finishTransformCutscene(activate) {
+  if (!game.transformCutscene && !activate) return;
+  clearTimeout(transformCutsceneTimeout);
+  transformCutsceneTimeout = null;
+  game.transformCutscene = false;
+
+  if (transformVideo) {
+    transformVideo.pause();
+    transformVideo.currentTime = 0;
+  }
+  if (transformCutscene) transformCutscene.hidden = true;
+  if (activate && game.running && !game.over) activateRoadRider(false);
+  updateHud();
+}
+
+function hideTransformCutscene() {
+  clearTimeout(transformCutsceneTimeout);
+  transformCutsceneTimeout = null;
+  game.transformCutscene = false;
+  if (transformVideo) {
+    transformVideo.pause();
+    transformVideo.currentTime = 0;
+  }
+  if (transformCutscene) transformCutscene.hidden = true;
+}
+
+function playRideOnVoice() {
+  if (!("speechSynthesis" in window)) return;
+  window.speechSynthesis.cancel();
+  const voice = new SpeechSynthesisUtterance("ride on");
+  voice.lang = "en-US";
+  voice.rate = 0.9;
+  voice.pitch = 0.75;
+  voice.volume = 1;
+  window.speechSynthesis.speak(voice);
 }
 
 function burst(x, y, color, count, power) {
@@ -689,6 +772,7 @@ function updateMarathonLegion(dt, playerPowered) {
 
 function update(dt) {
   if (!game.running || game.paused || game.over) return;
+  if (game.transformCutscene) return;
 
   if (!game.boss && game.score >= game.nextMarathonAt) startMarathonLegion();
   const marathonActive = game.marathonTimer > 0;
@@ -2224,6 +2308,7 @@ function draw() {
 }
 
 function endGame() {
+  hideTransformCutscene();
   game.over = true;
   game.running = false;
   overlay.hidden = false;
@@ -2328,6 +2413,10 @@ startBtn.addEventListener("click", () => {
 pauseBtn.addEventListener("click", togglePause);
 bellBtn.addEventListener("click", ringBell);
 specialBtn.addEventListener("click", useSpecial);
+if (transformVideo) {
+  transformVideo.addEventListener("ended", () => finishTransformCutscene(true));
+  transformVideo.addEventListener("error", () => finishTransformCutscene(true));
+}
 
 fitCanvas();
 updateHud();
