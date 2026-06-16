@@ -393,7 +393,7 @@ function spawnItem(kindOverride) {
 function startBoss() {
   const road = roadBounds();
   game.bossLevel += 1;
-  const bossHp = game.bossLevel + 2;
+  const bossHp = 2.5 + game.bossLevel * 0.5;
   game.boss = {
     x: (road.left + road.right) / 2,
     y: -110,
@@ -421,6 +421,10 @@ function startBoss() {
     life: 1.3,
     color: "#ffd66d",
   });
+}
+
+function formatBossHp(value) {
+  return Number.isInteger(value) ? String(value) : value.toFixed(1);
 }
 
 function startMarathonLegion() {
@@ -1399,7 +1403,7 @@ function drawBossHealth() {
   ctx.font = "900 13px Malgun Gothic, sans-serif";
   ctx.textAlign = "center";
   ctx.fillStyle = "#fff4d6";
-  ctx.fillText(`\ubcf4\uc2a4 ${game.boss.level}\ub2e8\uacc4: \ud55c\uac15 4\ub95c \uc790\uc804\uac70 (${game.boss.hp}/${game.boss.maxHp})`, x + w / 2, y - 7);
+  ctx.fillText(`\ubcf4\uc2a4 ${game.boss.level}\ub2e8\uacc4: \ud55c\uac15 4\ub95c \uc790\uc804\uac70 (${formatBossHp(Math.max(0, game.boss.hp))}/${formatBossHp(game.boss.maxHp)})`, x + w / 2, y - 7);
   ctx.restore();
 }
 
