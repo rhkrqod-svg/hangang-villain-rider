@@ -168,12 +168,25 @@ function resetGame() {
 }
 
 function updateHud() {
-  scoreEl.textContent = `${Math.floor(game.score)}m`;
+  scoreEl.textContent = formatDistance(game.score);
+  scoreEl.title = `${Math.floor(game.score)}m`;
   healthEl.textContent = Math.max(0, Math.round(game.health));
   bellsEl.textContent = game.bells;
   specialBtn.disabled = !game.running || game.paused || game.over || game.bells < 10 || game.riderTimer > 0 || game.transformTimer > 0;
   specialBtn.classList.toggle("ready", !specialBtn.disabled);
   specialBtn.textContent = game.riderTimer > 0 ? Math.ceil(Math.min(10, game.riderTimer)) : "\ubcc0\uc2e0";
+}
+
+function formatDistance(distance) {
+  const meters = Math.floor(distance);
+  if (meters < 1000) return `${meters}m`;
+  return `${(meters / 1000).toFixed(1)}km`;
+}
+
+function formatDistanceDetail(distance) {
+  const meters = Math.floor(distance);
+  if (meters < 1000) return `${meters}m`;
+  return `${(meters / 1000).toFixed(1)}km (${meters}m)`;
 }
 
 function rand(min, max) {
@@ -2049,7 +2062,7 @@ function endGame() {
   game.over = true;
   game.running = false;
   overlay.hidden = false;
-  overlayText.textContent = `${Math.floor(game.score)}m \uc8fc\ud589. \ub2e4\uc2dc \ub2ec\ub824\ubcfc\uae4c\uc694?`;
+  overlayText.textContent = `${formatDistanceDetail(game.score)} \uc8fc\ud589. \ub2e4\uc2dc \ub2ec\ub824\ubcfc\uae4c\uc694?`;
   startBtn.textContent = "\uc7ac\ucd9c\ubc1c";
 }
 
