@@ -37,7 +37,6 @@ gameArt.background.src = "assets/hangang-arcade-bg.png";
 const villainTypes = [
   { name: "\uc5ed\uc8fc\ud589\ub7ec", color: "#ff5c5c", hp: 1, radius: 25, wobble: 0.8, score: 80, speedScale: 1.22 },
   { name: "\ud0a5\ubcf4\ub4dc\ud3ed\uc8fc\uc871", color: "#ffc857", hp: 1, radius: 22, wobble: 1.3, score: 95, hitScale: 0.56, visualScale: 0.8 },
-  { name: "\uc140\uce74\ubd09\ub7ec", color: "#a78bfa", hp: 1, radius: 24, wobble: 0.45, score: 75 },
   { name: "\uae38\ub9c9\uc218\ub2e4\ub2e8", color: "#f97316", hp: 2, radius: 31, wobble: 0.35, score: 140, speedScale: 0.72 },
   { name: "\ub7ec\ub2dd\ud06c\ub8e8", color: "#2563eb", hp: 2, radius: 62, wobble: 0, score: 190, speedScale: 0.42, straight: true, hitScale: 1.09, visualScale: 1.56 },
   { name: "\ub178\ube0c\ub808\ub07c \ud53d\uc2dc", color: "#111827", hp: 2, radius: 29, wobble: 1.9, score: 170, skid: true },
@@ -369,7 +368,6 @@ function spawnVillain() {
     phase: rand(0, Math.PI * 2),
     speed: (game.speed + extraSpeed + rand(-16, 52)) * (type.speedScale || 1),
     hitFlash: 0,
-    attackFlash: 0,
     hitScale: type.hitScale || CHARACTER_SCALE,
     visualScale: type.visualScale || 1,
   });
@@ -534,40 +532,6 @@ function circleHit(a, b) {
 
 function hitRadius(entity) {
   return entity.radius * (entity.hitScale || 1);
-}
-
-function pointSegmentDistance(px, py, ax, ay, bx, by) {
-  const dx = bx - ax;
-  const dy = by - ay;
-  const lengthSq = dx * dx + dy * dy || 1;
-  const t = clamp(((px - ax) * dx + (py - ay) * dy) / lengthSq, 0, 1);
-  const x = ax + dx * t;
-  const y = ay + dy * t;
-  return Math.hypot(px - x, py - y);
-}
-
-function selfieStickPose(v) {
-  const swing = Math.sin(v.phase * 3.4);
-  const snap = Math.sin(v.phase * 6.8) * 0.12;
-  const angle = -Math.PI * 0.28 + swing * 1.22 + snap;
-  const start = { x: 18, y: -18 };
-  const length = 82;
-  const end = {
-    x: start.x + Math.cos(angle) * length,
-    y: start.y + Math.sin(angle) * length,
-  };
-  return { start, end, angle, swing };
-}
-
-function selfieStickHitsPlayer(v) {
-  const pose = selfieStickPose(v);
-  const ax = v.x + pose.start.x * CHARACTER_SCALE;
-  const ay = v.y + pose.start.y * CHARACTER_SCALE;
-  const bx = v.x + pose.end.x * CHARACTER_SCALE;
-  const by = v.y + pose.end.y * CHARACTER_SCALE;
-  const stickDistance = pointSegmentDistance(game.player.x, game.player.y, ax, ay, bx, by);
-  const phoneDistance = Math.hypot(game.player.x - bx, game.player.y - by);
-  return stickDistance < hitRadius(game.player) + 7 * CHARACTER_SCALE || phoneDistance < hitRadius(game.player) + 18 * CHARACTER_SCALE;
 }
 
 function damagePlayer(amount, x, y) {
@@ -775,7 +739,6 @@ function update(dt) {
       villain.x = villain.baseX + Math.sin(villain.phase) * villain.radius * villain.wobble;
     }
     villain.hitFlash = Math.max(0, villain.hitFlash - dt);
-    villain.attackFlash = Math.max(0, villain.attackFlash - dt);
     if (circleHit(player, villain)) {
       if (riderActive || transformActive) {
         defeatVillain(villain, "\ub3cc\ud30c!");
@@ -783,17 +746,6 @@ function update(dt) {
         damagePlayer(villain.hp === 2 ? 17 : 11, villain.x, villain.y);
         villain.y += 72;
         if (!villain.straight) villain.baseX += villain.x > player.x ? 20 : -20;
-      }
-    }
-    if (!villain.dead && villain.name === "\uc140\uce74\ubd09\ub7ec" && selfieStickHitsPlayer(villain)) {
-      if (riderActive || transformActive) {
-        defeatVillain(villain, "\uc140\uce74\ubd09 \ub3cc\ud30c!");
-      } else {
-        villain.attackFlash = 0.18;
-        const pose = selfieStickPose(villain);
-        damagePlayer(13, villain.x + pose.end.x * CHARACTER_SCALE, villain.y + pose.end.y * CHARACTER_SCALE);
-        villain.y += 28;
-        villain.baseX += villain.x > player.x ? 14 : -14;
       }
     }
   }
@@ -1754,87 +1706,6 @@ function drawVillain(v) {
     return;
   }
 
-  if (v.name === "\uc140\uce74\ubd09\ub7ec") {
-    const pose = selfieStickPose(v);
-    const wave = pose.angle + Math.PI * 0.28;
-    const phoneX = pose.end.x;
-    const phoneY = pose.end.y;
-    const flash = v.attackFlash > 0;
-
-    ctx.fillStyle = "rgba(0, 0, 0, 0.22)";
-    ctx.beginPath();
-    ctx.ellipse(0, 35, 31, 10, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.strokeStyle = "#111827";
-    ctx.lineWidth = 5;
-    ctx.lineCap = "round";
-    ctx.beginPath();
-    ctx.moveTo(-9, 13);
-    ctx.lineTo(-19, 29);
-    ctx.moveTo(9, 13);
-    ctx.lineTo(19, 29);
-    ctx.moveTo(11, -11);
-    ctx.lineTo(pose.start.x + 4, pose.start.y - 4);
-    ctx.stroke();
-
-    ctx.strokeStyle = flash ? "#ff5c5c" : "#e5e7eb";
-    ctx.lineWidth = flash ? 7 : 5;
-    ctx.beginPath();
-    ctx.moveTo(pose.start.x, pose.start.y);
-    ctx.lineTo(phoneX, phoneY);
-    ctx.stroke();
-
-    ctx.save();
-    ctx.translate(phoneX, phoneY);
-    ctx.rotate(wave);
-    ctx.fillStyle = flash ? "#7f1d1d" : "#111827";
-    ctx.beginPath();
-    ctx.roundRect(-11, -16, 22, 32, 5);
-    ctx.fill();
-    ctx.fillStyle = flash ? "#fecaca" : "#68e5ff";
-    ctx.fillRect(-7, -11, 14, 20);
-    ctx.restore();
-
-    ctx.strokeStyle = flash ? "rgba(255, 92, 92, 0.9)" : "rgba(255,255,255,0.65)";
-    ctx.lineWidth = flash ? 3 : 2;
-    ctx.beginPath();
-    ctx.arc(phoneX, phoneY, 21, -0.9 + wave, -0.2 + wave);
-    ctx.arc(phoneX, phoneY, 31, 0.15 + wave, 0.95 + wave);
-    ctx.arc(pose.start.x, pose.start.y, 54, -0.34 + wave, 0.2 + wave);
-    ctx.stroke();
-
-    ctx.fillStyle = v.hitFlash > 0 ? "#ffffff" : "#a78bfa";
-    ctx.beginPath();
-    ctx.roundRect(-16, -9, 32, 30, 9);
-    ctx.fill();
-    ctx.fillStyle = "#f4d5b5";
-    ctx.beginPath();
-    ctx.arc(0, -25, 12, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = "#111827";
-    ctx.beginPath();
-    ctx.arc(-5, -27, 3, 0, Math.PI * 2);
-    ctx.arc(6, -27, 3, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = "#111827";
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.arc(1, -22, 6, 0.12 * Math.PI, 0.88 * Math.PI);
-    ctx.stroke();
-    ctx.fillStyle = "#7c3aed";
-    ctx.beginPath();
-    ctx.ellipse(0, -36, 15, 9, 0, Math.PI, Math.PI * 2);
-    ctx.lineTo(14, -30);
-    ctx.quadraticCurveTo(0, -25, -14, -30);
-    ctx.closePath();
-    ctx.fill();
-
-    drawVillainLabel(v, v.radius + 25, 900);
-    ctx.restore();
-    return;
-  }
-
   if (v.name === "\ud0a5\ubcf4\ub4dc\ud3ed\uc8fc\uc871") {
     ctx.scale(v.visualScale || 1, v.visualScale || 1);
     const lean = Math.sin(v.phase * 1.9) * 0.08;
@@ -2066,17 +1937,6 @@ function drawVillain(v) {
   ctx.moveTo(-10, 10);
   ctx.quadraticCurveTo(0, 3, 11, 10);
   ctx.stroke();
-
-  if (v.name === "\uc140\uce74\ubd09\ub7ec") {
-    ctx.strokeStyle = "#d7d7d7";
-    ctx.lineWidth = 4;
-    ctx.beginPath();
-    ctx.moveTo(16, -12);
-    ctx.lineTo(39, -34);
-    ctx.stroke();
-    ctx.fillStyle = "#111827";
-    ctx.fillRect(34, -42, 17, 12);
-  }
 
   if (v.name === "\ud0a5\ubcf4\ub4dc\ud3ed\uc8fc\uc871") {
     ctx.strokeStyle = "#222";
