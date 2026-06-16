@@ -92,7 +92,7 @@ const game = {
   nextBossAt: 5000,
   boss: null,
   bossProjectiles: [],
-  marathonTriggered: false,
+  nextMarathonAt: 10000,
   marathonTimer: 0,
   marathonSpawnTimer: 0,
   marathonRunners: [],
@@ -136,7 +136,7 @@ function resetGame() {
   game.nextBossAt = 5000;
   game.boss = null;
   game.bossProjectiles = [];
-  game.marathonTriggered = false;
+  game.nextMarathonAt = 10000;
   game.marathonTimer = 0;
   game.marathonSpawnTimer = 0;
   game.marathonRunners = [];
@@ -281,7 +281,7 @@ function startBoss() {
 
 function startMarathonLegion() {
   const road = roadBounds();
-  game.marathonTriggered = true;
+  game.nextMarathonAt += 10000;
   game.marathonTimer = 11;
   game.marathonSpawnTimer = 0;
   game.marathonRunners = [];
@@ -525,7 +525,7 @@ function updateMarathonLegion(dt, playerPowered) {
 function update(dt) {
   if (!game.running || game.paused || game.over) return;
 
-  if (!game.marathonTriggered && !game.boss && game.score >= 10000) startMarathonLegion();
+  if (!game.boss && game.score >= game.nextMarathonAt) startMarathonLegion();
   const marathonActive = game.marathonTimer > 0;
   if (!marathonActive && !game.boss && game.score >= game.nextBossAt) startBoss();
   const bossActive = Boolean(game.boss);
