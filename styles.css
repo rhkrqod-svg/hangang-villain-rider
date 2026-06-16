@@ -141,11 +141,11 @@ button {
 .touch-controls {
   z-index: 4;
   display: grid;
-  grid-template-columns: 174px 76px 76px;
+  grid-template-columns: 76px 204px 76px;
   justify-content: center;
   align-items: center;
-  gap: 12px;
-  min-height: 134px;
+  gap: 10px;
+  min-height: 150px;
   padding: 14px clamp(16px, 4vw, 28px) 18px;
   background:
     linear-gradient(180deg, rgba(7, 16, 19, 0.82), rgba(6, 13, 16, 0.96));
@@ -155,16 +155,16 @@ button {
 
 .dpad {
   display: grid;
-  grid-template-columns: repeat(3, 56px);
-  grid-template-rows: repeat(2, 56px);
-  gap: 8px;
+  grid-template-columns: repeat(3, 62px);
+  grid-template-rows: repeat(2, 62px);
+  gap: 9px;
 }
 
 .dpad button {
-  width: 56px;
-  height: 56px;
+  width: 62px;
+  height: 62px;
   border-radius: 8px;
-  font-size: 25px;
+  font-size: 30px;
   font-weight: 900;
   color: #e8fff7;
 }
@@ -209,8 +209,10 @@ button {
     linear-gradient(135deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.04));
   color: #dffcff;
   border-color: rgba(104, 229, 255, 0.48);
-  font-size: 28px;
+  font-size: 17px;
   font-weight: 1000;
+  line-height: 1.05;
+  word-break: keep-all;
   text-shadow: 0 0 14px rgba(104, 229, 255, 0.72);
 }
 
@@ -227,7 +229,7 @@ button {
 
 .overlay {
   position: absolute;
-  inset: 64px 0 134px;
+  inset: 64px 0 150px;
   z-index: 5;
   display: grid;
   place-items: center;
@@ -278,7 +280,7 @@ button {
 
 @media (min-width: 820px) {
   .touch-controls {
-    grid-template-columns: 174px 76px 76px;
+    grid-template-columns: 76px 204px 76px;
   }
 }
 
@@ -301,31 +303,35 @@ button {
   }
 
   .touch-controls {
-    min-height: 132px;
-    grid-template-columns: 174px 76px 76px;
-    gap: 9px;
-    padding-inline: 12px;
+    min-height: 150px;
+    grid-template-columns: 74px 206px 74px;
+    gap: 8px;
+    padding-inline: 8px;
   }
 
   .dpad {
-    grid-template-columns: repeat(3, 52px);
-    grid-template-rows: repeat(2, 52px);
-    gap: 7px;
+    grid-template-columns: repeat(3, 62px);
+    grid-template-rows: repeat(2, 62px);
+    gap: 10px;
   }
 
   .dpad button {
-    width: 52px;
-    height: 52px;
-    font-size: 24px;
+    width: 62px;
+    height: 62px;
+    font-size: 30px;
   }
 
   .bell-button,
   .special-button {
-    width: 76px;
+    width: 74px;
     height: 76px;
   }
 
+  .special-button {
+    font-size: 16px;
+  }
+
   .overlay {
-    inset: 58px 0 132px;
+    inset: 58px 0 150px;
   }
 }

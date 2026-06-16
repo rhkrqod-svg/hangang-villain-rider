@@ -160,7 +160,7 @@ function updateHud() {
   bellsEl.textContent = game.bells;
   specialBtn.disabled = !game.running || game.paused || game.over || game.bells < 10 || game.riderTimer > 0 || game.transformTimer > 0;
   specialBtn.classList.toggle("ready", !specialBtn.disabled);
-  specialBtn.textContent = game.riderTimer > 0 ? Math.ceil(Math.min(10, game.riderTimer)) : "R";
+  specialBtn.textContent = game.riderTimer > 0 ? Math.ceil(Math.min(10, game.riderTimer)) : "\ubcc0\uc2e0<<";
 }
 
 function rand(min, max) {
