@@ -151,10 +151,10 @@ button {
 .touch-controls {
   z-index: 4;
   display: grid;
-  grid-template-columns: 76px 204px 76px;
+  grid-template-columns: 68px 204px 68px;
   justify-content: center;
   align-items: center;
-  gap: 10px;
+  gap: 17px;
   min-height: 150px;
   padding: 14px clamp(16px, 4vw, 28px) 18px;
   background:
@@ -200,8 +200,8 @@ button {
 
 .bell-button,
 .special-button {
-  width: 76px;
-  height: 76px;
+  width: 68px;
+  height: 68px;
   border-radius: 8px;
 }
 
@@ -290,7 +290,7 @@ button {
 
 @media (min-width: 820px) {
   .touch-controls {
-    grid-template-columns: 76px 204px 76px;
+    grid-template-columns: 68px 204px 68px;
   }
 }
 
@@ -314,9 +314,9 @@ button {
 
   .touch-controls {
     min-height: 150px;
-    grid-template-columns: 74px 206px 74px;
-    gap: 8px;
-    padding-inline: 8px;
+    grid-template-columns: 66px 206px 66px;
+    gap: 13px;
+    padding-inline: 6px;
   }
 
   .dpad {
@@ -333,12 +333,12 @@ button {
 
   .bell-button,
   .special-button {
-    width: 74px;
-    height: 76px;
+    width: 66px;
+    height: 68px;
   }
 
   .special-button {
-    font-size: 16px;
+    font-size: 15px;
   }
 
   .overlay {
