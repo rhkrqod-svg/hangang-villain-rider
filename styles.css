@@ -151,11 +151,11 @@ button {
 .touch-controls {
   z-index: 4;
   display: grid;
-  grid-template-columns: 68px 204px 68px;
+  grid-template-columns: 60px 230px 60px;
   justify-content: center;
   align-items: center;
   gap: 17px;
-  min-height: 150px;
+  min-height: 166px;
   padding: 14px clamp(16px, 4vw, 28px) 18px;
   background:
     linear-gradient(180deg, rgba(7, 16, 19, 0.82), rgba(6, 13, 16, 0.96));
@@ -165,16 +165,16 @@ button {
 
 .dpad {
   display: grid;
-  grid-template-columns: repeat(3, 62px);
-  grid-template-rows: repeat(2, 62px);
-  gap: 9px;
+  grid-template-columns: repeat(3, 70px);
+  grid-template-rows: repeat(2, 70px);
+  gap: 10px;
 }
 
 .dpad button {
-  width: 62px;
-  height: 62px;
+  width: 70px;
+  height: 70px;
   border-radius: 8px;
-  font-size: 30px;
+  font-size: 36px;
   font-weight: 900;
   color: #e8fff7;
 }
@@ -203,12 +203,12 @@ button {
   width: 62px;
   height: 62px;
   border-radius: 8px;
-  transform: translateY(-24px);
+  transform: translateY(-42px);
 }
 
 .bell-button:active,
 .special-button:active {
-  transform: translateY(-21px) scale(0.98);
+  transform: translateY(-39px) scale(0.98);
 }
 
 .bell-button {
@@ -245,7 +245,7 @@ button {
 
 .overlay {
   position: absolute;
-  inset: 64px 0 150px;
+  inset: 64px 0 166px;
   z-index: 5;
   display: grid;
   place-items: center;
@@ -296,7 +296,7 @@ button {
 
 @media (min-width: 820px) {
   .touch-controls {
-    grid-template-columns: 68px 204px 68px;
+    grid-template-columns: 60px 230px 60px;
   }
 }
 
@@ -319,22 +319,22 @@ button {
   }
 
   .touch-controls {
-    min-height: 150px;
-    grid-template-columns: 66px 206px 66px;
-    gap: 13px;
+    min-height: 166px;
+    grid-template-columns: 60px 230px 60px;
+    gap: 10px;
     padding-inline: 6px;
   }
 
   .dpad {
-    grid-template-columns: repeat(3, 62px);
-    grid-template-rows: repeat(2, 62px);
+    grid-template-columns: repeat(3, 70px);
+    grid-template-rows: repeat(2, 70px);
     gap: 10px;
   }
 
   .dpad button {
-    width: 62px;
-    height: 62px;
-    font-size: 30px;
+    width: 70px;
+    height: 70px;
+    font-size: 36px;
   }
 
   .bell-button,
@@ -348,6 +348,31 @@ button {
   }
 
   .overlay {
-    inset: 58px 0 150px;
+    inset: 58px 0 166px;
+  }
+}
+
+@media (max-width: 390px) {
+  .touch-controls {
+    grid-template-columns: 56px 218px 56px;
+    gap: 8px;
+    padding-inline: 4px;
+  }
+
+  .dpad {
+    grid-template-columns: repeat(3, 66px);
+    grid-template-rows: repeat(2, 66px);
+  }
+
+  .dpad button {
+    width: 66px;
+    height: 66px;
+    font-size: 34px;
+  }
+
+  .bell-button,
+  .special-button {
+    width: 56px;
+    height: 60px;
   }
 }
