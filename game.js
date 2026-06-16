@@ -795,17 +795,34 @@ function drawBackground(w, h, t) {
     ctx.stroke();
   }
 
+  const laneWidth = road.width / 4;
   ctx.strokeStyle = theme.stripe;
-  ctx.lineWidth = 4;
-  ctx.setLineDash([25, 30]);
+  ctx.lineWidth = 3;
+  ctx.setLineDash([24, 32]);
   ctx.lineDashOffset = t * 190;
-  for (let x = road.left + road.width / 3; x < road.right; x += road.width / 3) {
+  for (const x of [road.left + laneWidth, road.left + laneWidth * 3]) {
     ctx.beginPath();
     ctx.moveTo(x, -50);
     ctx.lineTo(x, h + 50);
     ctx.stroke();
   }
   ctx.setLineDash([]);
+
+  const centerX = road.left + road.width / 2;
+  ctx.strokeStyle = "rgba(15, 23, 42, 0.45)";
+  ctx.lineWidth = 10;
+  ctx.beginPath();
+  ctx.moveTo(centerX, -50);
+  ctx.lineTo(centerX, h + 50);
+  ctx.stroke();
+  ctx.strokeStyle = "#ffd34d";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(centerX - 4, -50);
+  ctx.lineTo(centerX - 4, h + 50);
+  ctx.moveTo(centerX + 4, -50);
+  ctx.lineTo(centerX + 4, h + 50);
+  ctx.stroke();
 
   ctx.fillStyle = theme.rail;
   ctx.fillRect(road.left - 18, 0, 7, h);
