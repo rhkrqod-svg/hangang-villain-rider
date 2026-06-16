@@ -88,7 +88,8 @@ const game = {
   transformTimer: 0,
   riderTimer: 0,
   riderFlash: 0,
-  bossDefeated: false,
+  bossLevel: 0,
+  nextBossAt: 5000,
   boss: null,
   bossProjectiles: [],
   comboText: [],
@@ -127,7 +128,8 @@ function resetGame() {
   game.transformTimer = 0;
   game.riderTimer = 0;
   game.riderFlash = 0;
-  game.bossDefeated = false;
+  game.bossLevel = 0;
+  game.nextBossAt = 5000;
   game.boss = null;
   game.bossProjectiles = [];
   game.comboText = [];
@@ -239,24 +241,28 @@ function spawnItem(kindOverride) {
 
 function startBoss() {
   const road = roadBounds();
+  game.bossLevel += 1;
+  const bossHp = game.bossLevel + 2;
   game.boss = {
     x: (road.left + road.right) / 2,
     y: -110,
     targetY: canvas.clientHeight * 0.2,
     radius: 66,
-    hp: 3,
-    maxHp: 3,
+    level: game.bossLevel,
+    hp: bossHp,
+    maxHp: bossHp,
     fireTimer: 1.6,
     phase: 0,
     hurt: 0,
   };
+  game.nextBossAt += 5000;
   game.villains = [];
   game.items = [];
   game.bossProjectiles = [];
   game.health = Math.max(game.health, 50);
   game.invincible = Math.max(game.invincible, 1.4);
   game.comboText.push({
-    text: "\ubcf4\uc2a4 \ub4f1\uc7a5!",
+    text: `\ubcf4\uc2a4 ${game.bossLevel}\ub2e8\uacc4 \ub4f1\uc7a5!`,
     x: game.boss.x,
     y: canvas.clientHeight * 0.28,
     age: 0,
@@ -352,18 +358,18 @@ function defeatVillain(villain, reason) {
 
 function defeatBoss() {
   if (!game.boss) return;
+  const defeatedLevel = game.boss.level;
   burst(game.boss.x, game.boss.y, "#ffd66d", 42, 420);
   burst(game.boss.x, game.boss.y + 20, "#68e5ff", 36, 360);
   game.comboText.push({
-    text: "4\ub95c \uc790\uc804\uac70 \ud1f4\uce58!",
+    text: `${defeatedLevel}\ub2e8\uacc4 4\ub95c \uc790\uc804\uac70 \ud1f4\uce58!`,
     x: game.boss.x,
     y: game.boss.y - 72,
     age: 0,
     life: 1.4,
     color: "#fff0b3",
   });
-  game.score += 1000;
-  game.bossDefeated = true;
+  game.score += 1000 + defeatedLevel * 250;
   game.boss = null;
   game.bossProjectiles = [];
 }
@@ -394,13 +400,14 @@ function updateBoss(dt, playerPowered) {
   boss.fireTimer -= dt;
 
   if (boss.fireTimer <= 0) {
-    const count = boss.hp === 1 ? 3 : 2;
+    const enrage = boss.hp <= Math.ceil(boss.maxHp / 2) ? 1 : 0;
+    const count = Math.min(8, boss.level + 1 + enrage);
     for (let i = 0; i < count; i += 1) {
       game.bossProjectiles.push({
-        x: boss.x + (i - (count - 1) / 2) * 42,
+        x: boss.x + (i - (count - 1) / 2) * Math.max(26, 46 - boss.level * 2),
         y: boss.y + 62,
-        vx: rand(-26, 26),
-        vy: rand(225, 285),
+        vx: rand(-32, 32),
+        vy: rand(225 + boss.level * 12, 285 + boss.level * 15),
         radius: 22,
         rotation: rand(-0.4, 0.4),
         phase: rand(0, Math.PI * 2),
@@ -416,14 +423,16 @@ function updateBoss(dt, playerPowered) {
       life: 0.72,
       color: "#ffd66d",
     });
-    boss.fireTimer = boss.hp === 1 ? rand(0.95, 1.25) : rand(1.25, 1.7);
+    const pressure = Math.min(0.55, boss.level * 0.07);
+    boss.fireTimer = boss.hp <= Math.ceil(boss.maxHp / 2) ? rand(0.95 - pressure, 1.25 - pressure) : rand(1.25 - pressure, 1.7 - pressure);
+    boss.fireTimer = Math.max(0.58, boss.fireTimer);
   }
 }
 
 function update(dt) {
   if (!game.running || game.paused || game.over) return;
 
-  if (!game.boss && !game.bossDefeated && game.score >= 5000) startBoss();
+  if (!game.boss && game.score >= game.nextBossAt) startBoss();
   const bossActive = Boolean(game.boss);
   const riderActive = game.riderTimer > 0;
   const transformActive = game.transformTimer > 0;
@@ -432,7 +441,8 @@ function update(dt) {
   game.riderFlash = Math.max(0, game.riderFlash - dt);
   game.time += dt;
   game.score += bossActive ? 0 : dt * (22 + game.time * 0.65) * (riderActive ? 2.6 : 1);
-  game.speed = (bossActive ? 170 : 280 + Math.min(170, Math.max(0, game.time - 6) * 6.0)) + (riderActive ? 210 : 0);
+  const distanceSpeed = game.score / 250;
+  game.speed = (bossActive ? 170 + game.boss.level * 10 : 280 + Math.min(170, Math.max(0, game.time - 6) * 6.0) + distanceSpeed) + (riderActive ? 210 : 0);
   game.invincible = riderActive ? Math.max(game.invincible, 0.2) : Math.max(0, game.invincible - dt);
 
   const road = roadBounds();
@@ -960,7 +970,7 @@ function drawBossHealth() {
   ctx.font = "900 13px Malgun Gothic, sans-serif";
   ctx.textAlign = "center";
   ctx.fillStyle = "#fff4d6";
-  ctx.fillText("\ubcf4\uc2a4: \ud55c\uac15 4\ub95c \uc790\uc804\uac70", x + w / 2, y - 7);
+  ctx.fillText(`\ubcf4\uc2a4 ${game.boss.level}\ub2e8\uacc4: \ud55c\uac15 4\ub95c \uc790\uc804\uac70 (${game.boss.hp}/${game.boss.maxHp})`, x + w / 2, y - 7);
   ctx.restore();
 }
 
