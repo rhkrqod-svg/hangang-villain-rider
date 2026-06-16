@@ -9,6 +9,7 @@ const overlayText = document.getElementById("overlayText");
 const startBtn = document.getElementById("startBtn");
 const pauseBtn = document.getElementById("pauseBtn");
 const bellBtn = document.getElementById("bellBtn");
+const specialBtn = document.getElementById("specialBtn");
 
 const keys = new Set();
 const hold = new Set();
@@ -79,11 +80,14 @@ const game = {
   time: 0,
   score: 0,
   health: 100,
-  bells: 3,
+  bells: 10,
   speed: 280,
   spawnTimer: 0,
   itemTimer: 2.5,
   invincible: 0,
+  transformTimer: 0,
+  riderTimer: 0,
+  riderFlash: 0,
   comboText: [],
   player: {
     x: 220,
@@ -112,11 +116,14 @@ function resetGame() {
   game.time = 0;
   game.score = 0;
   game.health = 100;
-  game.bells = 3;
+  game.bells = 10;
   game.speed = 280;
   game.spawnTimer = 1.2;
   game.itemTimer = 3.1;
   game.invincible = 0;
+  game.transformTimer = 0;
+  game.riderTimer = 0;
+  game.riderFlash = 0;
   game.comboText = [];
   game.villains = [];
   game.blasts = [];
@@ -135,6 +142,9 @@ function updateHud() {
   scoreEl.textContent = `${Math.floor(game.score)}m`;
   healthEl.textContent = Math.max(0, Math.round(game.health));
   bellsEl.textContent = game.bells;
+  specialBtn.disabled = !game.running || game.paused || game.over || game.bells < 10 || game.riderTimer > 0 || game.transformTimer > 0;
+  specialBtn.classList.toggle("ready", !specialBtn.disabled);
+  specialBtn.textContent = game.riderTimer > 0 ? Math.ceil(Math.min(10, game.riderTimer)) : "R";
 }
 
 function rand(min, max) {
@@ -236,6 +246,26 @@ function ringBell() {
   updateHud();
 }
 
+function useSpecial() {
+  if (!game.running || game.paused || game.over || game.bells < 10 || game.riderTimer > 0 || game.transformTimer > 0) return;
+  game.bells -= 10;
+  game.transformTimer = 1.85;
+  game.riderTimer = 11.85;
+  game.riderFlash = 0.9;
+  game.invincible = Math.max(game.invincible, 12);
+  burst(game.player.x, game.player.y - 18, "#68e5ff", 34, 380);
+  burst(game.player.x, game.player.y - 18, "#ffd66d", 24, 300);
+  game.comboText.push({
+    text: "\ub85c\ub4dc\ub77c\uc774\ub354!",
+    x: game.player.x,
+    y: game.player.y - 92,
+    age: 0,
+    life: 1.2,
+    color: "#dffcff",
+  });
+  updateHud();
+}
+
 function burst(x, y, color, count, power) {
   for (let i = 0; i < count; i += 1) {
     const a = rand(0, Math.PI * 2);
@@ -285,7 +315,7 @@ function defeatVillain(villain, reason) {
 
 function pickup(item) {
   if (item.kind === "bell") {
-    game.bells = Math.min(9, game.bells + 2);
+    game.bells = Math.min(20, game.bells + 2);
     game.comboText.push({ text: "\ubca8 +2", x: item.x, y: item.y - 28, age: 0, life: 0.8, color: "#fff0b3" });
     burst(item.x, item.y, "#ffc857", 12, 180);
   } else {
@@ -300,10 +330,15 @@ function pickup(item) {
 function update(dt) {
   if (!game.running || game.paused || game.over) return;
 
+  const riderActive = game.riderTimer > 0;
+  const transformActive = game.transformTimer > 0;
+  game.transformTimer = Math.max(0, game.transformTimer - dt);
+  game.riderTimer = Math.max(0, game.riderTimer - dt);
+  game.riderFlash = Math.max(0, game.riderFlash - dt);
   game.time += dt;
-  game.score += dt * (22 + game.time * 0.65);
-  game.speed = 280 + Math.min(170, Math.max(0, game.time - 6) * 6.0);
-  game.invincible = Math.max(0, game.invincible - dt);
+  game.score += dt * (22 + game.time * 0.65) * (riderActive ? 2.6 : 1);
+  game.speed = 280 + Math.min(170, Math.max(0, game.time - 6) * 6.0) + (riderActive ? 210 : 0);
+  game.invincible = riderActive ? Math.max(game.invincible, 0.2) : Math.max(0, game.invincible - dt);
 
   const road = roadBounds();
   const player = game.player;
@@ -314,8 +349,8 @@ function update(dt) {
   if (keys.has("ArrowLeft") || keys.has("KeyA") || hold.has("left")) vx -= 1;
   if (keys.has("ArrowRight") || keys.has("KeyD") || hold.has("right")) vx += 1;
   const len = Math.hypot(vx, vy) || 1;
-  player.x = clamp(player.x + (vx / len) * 390 * dt, road.left + player.radius + 8, road.right - player.radius - 8);
-  player.y = clamp(player.y + (vy / len) * 360 * dt, canvas.clientHeight * 0.45, road.bottom - player.radius - 18);
+  player.x = clamp(player.x + (vx / len) * (riderActive ? 500 : 390) * dt, road.left + player.radius + 8, road.right - player.radius - 8);
+  player.y = clamp(player.y + (vy / len) * (riderActive ? 430 : 360) * dt, canvas.clientHeight * 0.45, road.bottom - player.radius - 18);
   player.tilt += (vx * 0.34 - player.tilt) * Math.min(1, dt * 10);
 
   game.spawnTimer -= dt;
@@ -336,9 +371,13 @@ function update(dt) {
     villain.x = villain.baseX + Math.sin(villain.phase) * villain.radius * villain.wobble;
     villain.hitFlash = Math.max(0, villain.hitFlash - dt);
     if (circleHit(player, villain)) {
-      damagePlayer(villain.hp === 2 ? 17 : 11, villain.x, villain.y);
-      villain.y += 72;
-      villain.baseX += villain.x > player.x ? 20 : -20;
+      if (riderActive || transformActive) {
+        defeatVillain(villain, "\ub3cc\ud30c!");
+      } else {
+        damagePlayer(villain.hp === 2 ? 17 : 11, villain.x, villain.y);
+        villain.y += 72;
+        villain.baseX += villain.x > player.x ? 20 : -20;
+      }
     }
   }
 
@@ -543,12 +582,22 @@ function drawRoadGlow(w, h, road, theme, t) {
 
 function drawPlayer() {
   const p = game.player;
+  const riderActive = game.riderTimer > 0;
   ctx.save();
   ctx.translate(p.x, p.y);
   ctx.rotate(p.tilt);
 
-  if (game.invincible > 0 && Math.floor(game.time * 18) % 2 === 0) {
+  if (!riderActive && game.invincible > 0 && Math.floor(game.time * 18) % 2 === 0) {
     ctx.globalAlpha = 0.5;
+  }
+
+  if (riderActive) {
+    ctx.globalAlpha = 0.34 + Math.sin(game.time * 18) * 0.08;
+    ctx.fillStyle = "#68e5ff";
+    ctx.beginPath();
+    ctx.ellipse(0, 4, 42, 74, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
   }
 
   ctx.strokeStyle = "#101516";
@@ -558,7 +607,7 @@ function drawPlayer() {
   ctx.arc(0, 24, 12, 0, Math.PI * 2);
   ctx.stroke();
 
-  ctx.strokeStyle = "#31d6a4";
+  ctx.strokeStyle = riderActive ? "#dffcff" : "#31d6a4";
   ctx.lineWidth = 5;
   ctx.beginPath();
   ctx.moveTo(0, -24);
@@ -568,21 +617,124 @@ function drawPlayer() {
   ctx.closePath();
   ctx.stroke();
 
-  ctx.fillStyle = "#f4d5b5";
+  ctx.fillStyle = riderActive ? "#101820" : "#f4d5b5";
   ctx.beginPath();
   ctx.arc(0, -48, 10, 0, Math.PI * 2);
   ctx.fill();
 
-  ctx.fillStyle = "#115e59";
+  if (riderActive) {
+    ctx.fillStyle = "#68e5ff";
+    ctx.beginPath();
+    ctx.ellipse(-4, -50, 6, 3, -0.15, 0, Math.PI * 2);
+    ctx.ellipse(6, -50, 6, 3, 0.15, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.fillStyle = riderActive ? "#17212a" : "#115e59";
   ctx.beginPath();
   ctx.roundRect(-13, -34, 26, 35, 7);
   ctx.fill();
 
-  ctx.fillStyle = "#ffffff";
+  ctx.fillStyle = riderActive ? "#dffcff" : "#ffffff";
   ctx.fillRect(-10, -59, 20, 8);
-  ctx.fillStyle = "#ff5c5c";
+  ctx.fillStyle = riderActive ? "#68e5ff" : "#ff5c5c";
   ctx.fillRect(7, -57, 9, 4);
 
+  ctx.fillStyle = "#111827";
+  ctx.fillRect(-15, -7, 30, 7);
+  ctx.fillStyle = riderActive ? "#68e5ff" : "#7dd3fc";
+  ctx.fillRect(-6, -10, 12, 11);
+
+  ctx.fillStyle = riderActive ? "#ffd66d" : "#111827";
+  ctx.fillRect(11, -27, 10, 7);
+  ctx.fillStyle = riderActive ? "#10201e" : "#68e5ff";
+  ctx.fillRect(13, -25, 6, 3);
+
+  ctx.restore();
+}
+
+function drawRiderTimer(w, h) {
+  if (game.riderTimer <= 0) return;
+  const road = roadBounds();
+  const barW = road.width * 0.62;
+  const x = road.left + (road.width - barW) / 2;
+  const y = 18;
+  ctx.save();
+  ctx.fillStyle = "rgba(4, 16, 20, 0.72)";
+  ctx.beginPath();
+  ctx.roundRect(x, y, barW, 12, 8);
+  ctx.fill();
+  ctx.fillStyle = "#68e5ff";
+  ctx.beginPath();
+  ctx.roundRect(x, y, barW * (Math.min(10, game.riderTimer) / 10), 12, 8);
+  ctx.fill();
+  ctx.font = "800 12px Malgun Gothic, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillStyle = "#dffcff";
+  ctx.fillText(`ROAD RIDER ${Math.ceil(Math.min(10, game.riderTimer))}s`, w / 2, y + 28);
+  ctx.restore();
+}
+
+function drawTransformScene(w, h) {
+  if (game.transformTimer <= 0) return;
+  const progress = 1 - game.transformTimer / 1.85;
+  const beltX = w / 2;
+  const beltY = h * 0.56;
+  const deviceStartX = game.player.x + 16;
+  const deviceStartY = game.player.y - 28;
+  const ease = progress * progress * (3 - 2 * progress);
+  const deviceX = deviceStartX + (beltX - deviceStartX) * ease;
+  const deviceY = deviceStartY + (beltY - deviceStartY) * ease;
+  const flash = Math.max(0, Math.sin(progress * Math.PI));
+
+  ctx.save();
+  ctx.fillStyle = `rgba(3, 8, 12, ${0.34 + flash * 0.18})`;
+  ctx.fillRect(0, 0, w, h);
+
+  ctx.strokeStyle = `rgba(104, 229, 255, ${0.24 + flash * 0.48})`;
+  ctx.lineWidth = 3;
+  for (let i = 0; i < 5; i += 1) {
+    ctx.beginPath();
+    ctx.arc(beltX, beltY, 48 + i * 34 + progress * 52, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  ctx.fillStyle = "#111827";
+  ctx.beginPath();
+  ctx.roundRect(beltX - 74, beltY - 14, 148, 28, 8);
+  ctx.fill();
+  ctx.fillStyle = "#68e5ff";
+  ctx.beginPath();
+  ctx.roundRect(beltX - 26, beltY - 24, 52, 48, 10);
+  ctx.fill();
+  ctx.fillStyle = "#10201e";
+  ctx.fillRect(beltX - 16, beltY - 8, 32, 16);
+
+  ctx.fillStyle = "#0b1520";
+  ctx.beginPath();
+  ctx.roundRect(deviceX - 16, deviceY - 22, 32, 44, 7);
+  ctx.fill();
+  ctx.fillStyle = "#7dd3fc";
+  ctx.fillRect(deviceX - 10, deviceY - 15, 20, 18);
+  ctx.fillStyle = "#dffcff";
+  ctx.fillRect(deviceX - 7, deviceY + 8, 14, 4);
+
+  if (progress > 0.72) {
+    ctx.globalAlpha = (progress - 0.72) / 0.28;
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, beltY - 3, w, 6);
+    ctx.globalAlpha = 1;
+  }
+
+  ctx.font = "900 30px Malgun Gothic, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillStyle = "#ffffff";
+  ctx.shadowColor = "#68e5ff";
+  ctx.shadowBlur = 18;
+  ctx.fillText("\ub85c\ub4dc\ub77c\uc774\ub354 \ubcc0\uc2e0", w / 2, h * 0.26);
+  ctx.font = "800 15px Malgun Gothic, sans-serif";
+  ctx.fillStyle = "#dffcff";
+  ctx.fillText("\uac00\ubbfc \ubaa8\ub4c8 \uc7a5\ucc29", w / 2, h * 0.31);
   ctx.restore();
 }
 
@@ -687,7 +839,8 @@ function draw() {
   const w = canvas.clientWidth;
   const h = canvas.clientHeight;
   ctx.clearRect(0, 0, w, h);
-  drawBackground(w, h, game.time);
+  const visualTime = game.time * (game.riderTimer > 0 ? 1.85 : 1);
+  drawBackground(w, h, visualTime);
 
   for (const item of game.items) drawItem(item);
   for (const blast of game.blasts) drawBlast(blast);
@@ -695,6 +848,8 @@ function draw() {
   drawPlayer();
   drawParticles();
   drawFloatingText();
+  drawRiderTimer(w, h);
+  drawTransformScene(w, h);
 
   if (!game.running) {
     ctx.fillStyle = "rgba(255,255,255,0.18)";
@@ -740,6 +895,7 @@ window.addEventListener("keydown", (event) => {
     event.preventDefault();
   }
   if (event.code === "Space") ringBell();
+  if (event.code === "KeyR") useSpecial();
   if (event.code === "KeyP") togglePause();
   keys.add(event.code);
 });
@@ -772,7 +928,9 @@ startBtn.addEventListener("click", () => {
 });
 pauseBtn.addEventListener("click", togglePause);
 bellBtn.addEventListener("click", ringBell);
+specialBtn.addEventListener("click", useSpecial);
 
 fitCanvas();
+updateHud();
 draw();
 requestAnimationFrame(frame);

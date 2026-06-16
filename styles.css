@@ -141,10 +141,10 @@ button {
 .touch-controls {
   z-index: 4;
   display: grid;
-  grid-template-columns: 184px 88px;
-  justify-content: space-between;
+  grid-template-columns: 174px 76px 76px;
+  justify-content: center;
   align-items: center;
-  gap: 20px;
+  gap: 12px;
   min-height: 134px;
   padding: 14px clamp(16px, 4vw, 28px) 18px;
   background:
@@ -188,15 +188,41 @@ button {
   grid-row: 2;
 }
 
-.bell-button {
-  width: 88px;
-  height: 88px;
+.bell-button,
+.special-button {
+  width: 76px;
+  height: 76px;
   border-radius: 8px;
+}
+
+.bell-button {
   background:
     linear-gradient(180deg, rgba(255, 221, 117, 0.34), rgba(255, 141, 74, 0.2));
   color: #fff4d6;
-  font-size: 40px;
+  font-size: 35px;
   border-color: rgba(255, 213, 98, 0.42);
+}
+
+.special-button {
+  background:
+    linear-gradient(180deg, rgba(79, 245, 255, 0.35), rgba(49, 214, 164, 0.15)),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.04));
+  color: #dffcff;
+  border-color: rgba(104, 229, 255, 0.48);
+  font-size: 28px;
+  font-weight: 1000;
+  text-shadow: 0 0 14px rgba(104, 229, 255, 0.72);
+}
+
+.special-button.ready {
+  box-shadow:
+    0 0 22px rgba(104, 229, 255, 0.38),
+    inset 0 1px 0 rgba(255, 255, 255, 0.32);
+}
+
+.special-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
 }
 
 .overlay {
@@ -252,7 +278,7 @@ button {
 
 @media (min-width: 820px) {
   .touch-controls {
-    grid-template-columns: 184px 88px;
+    grid-template-columns: 174px 76px 76px;
   }
 }
 
@@ -276,7 +302,8 @@ button {
 
   .touch-controls {
     min-height: 132px;
-    grid-template-columns: 174px 84px;
+    grid-template-columns: 174px 76px 76px;
+    gap: 9px;
     padding-inline: 12px;
   }
 
@@ -292,9 +319,10 @@ button {
     font-size: 24px;
   }
 
-  .bell-button {
-    width: 84px;
-    height: 84px;
+  .bell-button,
+  .special-button {
+    width: 76px;
+    height: 76px;
   }
 
   .overlay {
