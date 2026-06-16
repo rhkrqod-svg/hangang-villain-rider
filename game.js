@@ -21,6 +21,57 @@ const villainTypes = [
   { name: "\ub3d7\uc790\ub9ac\ud655\uc7a5\ub7ec", color: "#38bdf8", hp: 2, radius: 34, wobble: 0.2, score: 150 },
 ];
 
+const backgroundThemes = [
+  {
+    skyTop: "#79d7ff",
+    skyBottom: "#147fa7",
+    river: "#1591bd",
+    park: "#1f8f65",
+    road: "#53605d",
+    roadDark: "#24302f",
+    rail: "#e0d0a8",
+    stripe: "#eafff4",
+    glow: "#f8d66d",
+    skyline: "#28516a",
+  },
+  {
+    skyTop: "#ffb15e",
+    skyBottom: "#6e3a74",
+    river: "#455aa4",
+    park: "#47613b",
+    road: "#514f57",
+    roadDark: "#27252d",
+    rail: "#ffd083",
+    stripe: "#fff1c9",
+    glow: "#ff7a59",
+    skyline: "#412f58",
+  },
+  {
+    skyTop: "#101a3d",
+    skyBottom: "#07101d",
+    river: "#12365e",
+    park: "#123629",
+    road: "#3b4348",
+    roadDark: "#171c22",
+    rail: "#9cc8ff",
+    stripe: "#cbe9ff",
+    glow: "#68e5ff",
+    skyline: "#18243b",
+  },
+  {
+    skyTop: "#27123f",
+    skyBottom: "#082b37",
+    river: "#0b6e8f",
+    park: "#154b45",
+    road: "#40484c",
+    roadDark: "#111b1f",
+    rail: "#d9f46f",
+    stripe: "#dcfff4",
+    glow: "#ff4fd8",
+    skyline: "#242052",
+  },
+];
+
 const game = {
   running: false,
   paused: false,
@@ -92,6 +143,36 @@ function rand(min, max) {
 
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
+}
+
+function hexToRgb(hex) {
+  const value = hex.replace("#", "");
+  return [
+    parseInt(value.slice(0, 2), 16),
+    parseInt(value.slice(2, 4), 16),
+    parseInt(value.slice(4, 6), 16),
+  ];
+}
+
+function mixColor(a, b, amount) {
+  const ca = hexToRgb(a);
+  const cb = hexToRgb(b);
+  const mixed = ca.map((channel, index) => Math.round(channel + (cb[index] - channel) * amount));
+  return `rgb(${mixed[0]}, ${mixed[1]}, ${mixed[2]})`;
+}
+
+function currentTheme(t) {
+  const duration = 12;
+  const raw = t / duration;
+  const index = Math.floor(raw) % backgroundThemes.length;
+  const next = (index + 1) % backgroundThemes.length;
+  const local = raw - Math.floor(raw);
+  const blend = local * local * (3 - 2 * local);
+  const theme = {};
+  for (const key of Object.keys(backgroundThemes[index])) {
+    theme[key] = mixColor(backgroundThemes[index][key], backgroundThemes[next][key], blend);
+  }
+  return theme;
 }
 
 function roadBounds() {
@@ -306,45 +387,57 @@ function update(dt) {
 
 function drawBackground(w, h, t) {
   const road = roadBounds();
-  ctx.fillStyle = "#216f86";
-  ctx.fillRect(0, 0, road.left, h);
+  const theme = currentTheme(t);
+  const sky = ctx.createLinearGradient(0, 0, 0, h);
+  sky.addColorStop(0, theme.skyTop);
+  sky.addColorStop(0.44, theme.skyBottom);
+  sky.addColorStop(1, theme.roadDark);
+  ctx.fillStyle = sky;
+  ctx.fillRect(0, 0, w, h);
 
-  ctx.fillStyle = "#1a7c5b";
-  ctx.fillRect(road.right, 0, w - road.right, h);
+  drawSkyline(w, h, road, theme, t);
+  drawRiver(w, h, road, theme, t);
+  drawPark(w, h, road, theme, t);
+  drawBridge(w, h, road, theme, t);
 
-  ctx.fillStyle = "#313a39";
-  ctx.fillRect(road.left - 18, 0, road.width + 36, h);
+  ctx.fillStyle = theme.roadDark;
+  ctx.fillRect(road.left - 22, 0, road.width + 44, h);
 
-  ctx.fillStyle = "#525d59";
+  const roadGradient = ctx.createLinearGradient(road.left, 0, road.right, 0);
+  roadGradient.addColorStop(0, theme.roadDark);
+  roadGradient.addColorStop(0.11, theme.road);
+  roadGradient.addColorStop(0.5, "#60706b");
+  roadGradient.addColorStop(0.89, theme.road);
+  roadGradient.addColorStop(1, theme.roadDark);
+  ctx.fillStyle = roadGradient;
   ctx.fillRect(road.left, 0, road.width, h);
 
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.42)";
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
+  ctx.lineWidth = 1;
+  for (let y = ((t * 95) % 72) - 72; y < h + 72; y += 72) {
+    ctx.beginPath();
+    ctx.moveTo(road.left, y);
+    ctx.lineTo(road.right, y + 18);
+    ctx.stroke();
+  }
+
+  ctx.strokeStyle = theme.stripe;
   ctx.lineWidth = 4;
-  ctx.setLineDash([24, 28]);
-  ctx.lineDashOffset = t * 170;
+  ctx.setLineDash([25, 30]);
+  ctx.lineDashOffset = t * 190;
   for (let x = road.left + road.width / 3; x < road.right; x += road.width / 3) {
     ctx.beginPath();
-    ctx.moveTo(x, -40);
-    ctx.lineTo(x, h + 40);
+    ctx.moveTo(x, -50);
+    ctx.lineTo(x, h + 50);
     ctx.stroke();
   }
   ctx.setLineDash([]);
 
-  ctx.fillStyle = "rgba(255,255,255,0.18)";
-  for (let i = 0; i < 18; i += 1) {
-    const y = ((i * 130 + t * 72) % (h + 170)) - 90;
-    ctx.fillRect(road.left * 0.2 + Math.sin(i) * 18, y, Math.max(45, road.left * 0.62), 3);
-  }
+  ctx.fillStyle = theme.rail;
+  ctx.fillRect(road.left - 18, 0, 7, h);
+  ctx.fillRect(road.right + 11, 0, 7, h);
 
-  for (let i = 0; i < 10; i += 1) {
-    const y = ((i * 150 + t * 125) % (h + 210)) - 110;
-    const x = road.right + 28 + (i % 2) * 38;
-    drawTree(x, y, 0.9 + (i % 3) * 0.08);
-  }
-
-  ctx.fillStyle = "rgba(215, 209, 170, 0.9)";
-  ctx.fillRect(road.left - 18, 0, 8, h);
-  ctx.fillRect(road.right + 10, 0, 8, h);
+  drawRoadGlow(w, h, road, theme, t);
 }
 
 function drawTree(x, y, scale) {
@@ -358,6 +451,94 @@ function drawTree(x, y, scale) {
   ctx.beginPath();
   ctx.arc(x + 12 * scale, y - 12 * scale, 15 * scale, 0, Math.PI * 2);
   ctx.fill();
+}
+
+function drawRiver(w, h, road, theme, t) {
+  const riverWidth = Math.max(road.left - 18, 30);
+  const riverGradient = ctx.createLinearGradient(0, 0, riverWidth, 0);
+  riverGradient.addColorStop(0, theme.skyBottom);
+  riverGradient.addColorStop(0.45, theme.river);
+  riverGradient.addColorStop(1, "rgba(255, 255, 255, 0.08)");
+  ctx.fillStyle = riverGradient;
+  ctx.fillRect(0, 0, road.left - 18, h);
+
+  ctx.strokeStyle = "rgba(255,255,255,0.2)";
+  ctx.lineWidth = 3;
+  for (let i = 0; i < 18; i += 1) {
+    const y = ((i * 94 + t * 86) % (h + 130)) - 70;
+    const x = 8 + Math.sin(t + i) * 10;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(Math.max(36, road.left - 42), y + Math.sin(i) * 8);
+    ctx.stroke();
+  }
+}
+
+function drawPark(w, h, road, theme, t) {
+  ctx.fillStyle = theme.park;
+  ctx.fillRect(road.right + 18, 0, w - road.right - 18, h);
+
+  for (let i = 0; i < 12; i += 1) {
+    const y = ((i * 118 + t * 126) % (h + 170)) - 90;
+    const x = road.right + 30 + (i % 3) * 28;
+    drawTree(x, y, 0.82 + (i % 4) * 0.08);
+  }
+}
+
+function drawSkyline(w, h, road, theme, t) {
+  const baseY = h * 0.2;
+  ctx.fillStyle = theme.skyline;
+  for (let i = 0; i < 8; i += 1) {
+    const buildingW = 18 + (i % 3) * 9;
+    const buildingH = 42 + (i % 4) * 16;
+    const x = ((i * 42 - t * 22) % (w + 120)) - 80;
+    ctx.fillRect(x, baseY - buildingH, buildingW, buildingH);
+
+    ctx.fillStyle = i % 2 === 0 ? "rgba(255, 218, 120, 0.75)" : "rgba(130, 229, 255, 0.7)";
+    for (let y = baseY - buildingH + 8; y < baseY - 7; y += 12) {
+      ctx.fillRect(x + 5, y, 4, 4);
+      if (buildingW > 24) ctx.fillRect(x + 15, y, 4, 4);
+    }
+    ctx.fillStyle = theme.skyline;
+  }
+}
+
+function drawBridge(w, h, road, theme, t) {
+  const y = ((t * 145) % (h + 280)) - 140;
+  if (y < -120 || y > h + 70) return;
+
+  ctx.strokeStyle = theme.rail;
+  ctx.lineWidth = 5;
+  ctx.beginPath();
+  ctx.moveTo(0, y);
+  ctx.quadraticCurveTo(w / 2, y - 54, w, y);
+  ctx.stroke();
+
+  ctx.lineWidth = 2;
+  for (let x = 24; x < w; x += 34) {
+    ctx.beginPath();
+    ctx.moveTo(x, y - 5);
+    ctx.lineTo(x + 18, y - 48);
+    ctx.stroke();
+  }
+}
+
+function drawRoadGlow(w, h, road, theme, t) {
+  for (let i = 0; i < 7; i += 1) {
+    const y = ((i * 130 + t * 165) % (h + 150)) - 70;
+    const leftX = road.left - 22;
+    const rightX = road.right + 22;
+    ctx.fillStyle = theme.glow;
+    ctx.globalAlpha = 0.78;
+    ctx.beginPath();
+    ctx.arc(leftX, y, 4, 0, Math.PI * 2);
+    ctx.arc(rightX, y + 18, 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 0.18;
+    ctx.fillRect(leftX - 22, y + 4, 44, 2);
+    ctx.fillRect(rightX - 22, y + 22, 44, 2);
+    ctx.globalAlpha = 1;
+  }
 }
 
 function drawPlayer() {
