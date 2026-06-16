@@ -2261,11 +2261,11 @@ window.addEventListener("resize", () => {
 
 window.addEventListener("keydown", (event) => {
   if (event.target === playerNameInput) return;
-  if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"].includes(event.code)) {
+  if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space", "ControlLeft", "ControlRight"].includes(event.code)) {
     event.preventDefault();
   }
   if (event.code === "Space") ringBell();
-  if (event.code === "KeyR") useSpecial();
+  if (event.code === "KeyR" || event.code === "ControlLeft" || event.code === "ControlRight") useSpecial();
   if (event.code === "KeyP") togglePause();
   keys.add(event.code);
 });
