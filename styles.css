@@ -151,7 +151,7 @@ button {
 .touch-controls {
   z-index: 4;
   display: grid;
-  grid-template-columns: 60px 254px 60px;
+  grid-template-columns: 60px 286px 60px;
   justify-content: center;
   align-items: center;
   gap: 17px;
@@ -165,7 +165,7 @@ button {
 
 .dpad {
   display: grid;
-  grid-template-columns: repeat(3, 78px);
+  grid-template-columns: 94px 78px 94px;
   grid-template-rows: repeat(2, 78px);
   gap: 10px;
 }
@@ -186,6 +186,7 @@ button {
 .dpad button[data-hold="left"] {
   grid-column: 1;
   grid-row: 2;
+  width: 94px;
   font-size: 48px;
 }
 
@@ -197,6 +198,7 @@ button {
 .dpad button[data-hold="right"] {
   grid-column: 3;
   grid-row: 2;
+  width: 94px;
   font-size: 48px;
 }
 
@@ -407,7 +409,7 @@ button {
 
 @media (min-width: 820px) {
   .touch-controls {
-    grid-template-columns: 60px 254px 60px;
+    grid-template-columns: 60px 286px 60px;
   }
 }
 
@@ -431,13 +433,13 @@ button {
 
   .touch-controls {
     min-height: 166px;
-    grid-template-columns: 60px 254px 60px;
+    grid-template-columns: 60px 286px 60px;
     gap: 10px;
     padding-inline: 6px;
   }
 
   .dpad {
-    grid-template-columns: repeat(3, 78px);
+    grid-template-columns: 94px 78px 94px;
     grid-template-rows: repeat(2, 78px);
     gap: 10px;
   }
@@ -465,30 +467,32 @@ button {
 
 @media (max-width: 430px) {
   .touch-controls {
-    grid-template-columns: 56px 232px 56px;
-    gap: 8px;
-    padding-inline: 4px;
+    grid-template-columns: 52px 236px 52px;
+    gap: 6px;
+    padding-inline: 3px;
   }
 
   .dpad {
-    grid-template-columns: repeat(3, 72px);
+    grid-template-columns: 78px 66px 78px;
     grid-template-rows: repeat(2, 72px);
+    gap: 7px;
   }
 
   .dpad button {
-    width: 72px;
+    width: 66px;
     height: 72px;
     font-size: 40px;
   }
 
   .dpad button[data-hold="left"],
   .dpad button[data-hold="right"] {
+    width: 78px;
     font-size: 44px;
   }
 
   .bell-button,
   .special-button {
-    width: 56px;
+    width: 52px;
     height: 60px;
   }
 }
