@@ -537,6 +537,16 @@ function circleHit(a, b) {
   return dx * dx + dy * dy < r * r;
 }
 
+function bossProjectileHitPlayer(projectile, player) {
+  const playerRadius = hitRadius(player);
+  const halfWidth = 34;
+  const halfHeight = 18;
+  return (
+    Math.abs(player.x - projectile.x) < halfWidth + playerRadius &&
+    Math.abs(player.y - projectile.y) < halfHeight + playerRadius
+  );
+}
+
 function hitRadius(entity) {
   return entity.radius * (entity.hitScale || 1);
 }
@@ -616,7 +626,7 @@ function updateBoss(dt, playerPowered) {
         y: boss.y + 62,
         vx: rand(-32, 32),
         vy: rand(225 + boss.level * 12, 285 + boss.level * 15),
-        radius: 22,
+        radius: 34,
         rotation: rand(-0.4, 0.4),
         phase: rand(0, Math.PI * 2),
         age: 0,
@@ -824,7 +834,7 @@ function update(dt) {
     projectile.y += projectile.vy * dt;
     projectile.x += Math.sin(projectile.age * 9 + projectile.phase) * 24 * dt;
     projectile.rotation += dt * 5;
-    if (circleHit(player, projectile)) {
+    if (bossProjectileHitPlayer(projectile, player)) {
       if (riderActive || transformActive) {
         projectile.dead = true;
         burst(projectile.x, projectile.y, "#68e5ff", 12, 180);
