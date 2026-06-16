@@ -1405,6 +1405,10 @@ window.addEventListener("resize", () => {
   if (!game.running) draw();
 });
 
+["contextmenu", "selectstart", "dragstart"].forEach((eventName) => {
+  document.addEventListener(eventName, (event) => event.preventDefault());
+});
+
 window.addEventListener("keydown", (event) => {
   if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"].includes(event.code)) {
     event.preventDefault();
