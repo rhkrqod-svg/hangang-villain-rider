@@ -29,6 +29,7 @@ const villainTypes = [
   { name: "\ud0a5\ubcf4\ub4dc\ud3ed\uc8fc\uc871", color: "#ffc857", hp: 1, radius: 22, wobble: 1.3, score: 95 },
   { name: "\uc140\uce74\ubd09\ub7ec", color: "#a78bfa", hp: 1, radius: 24, wobble: 0.45, score: 75 },
   { name: "\uae38\ub9c9\uc218\ub2e4\ub2e8", color: "#f97316", hp: 2, radius: 31, wobble: 0.35, score: 140, speedScale: 0.72 },
+  { name: "\ub7ec\ub2dd\ud06c\ub8e8", color: "#2563eb", hp: 2, radius: 58, wobble: 0, score: 190, speedScale: 0.42, straight: true },
   { name: "\ub178\ube0c\ub808\ub07c \ud53d\uc2dc", color: "#111827", hp: 2, radius: 29, wobble: 1.9, score: 170, skid: true },
 ];
 
@@ -628,6 +629,8 @@ function update(dt) {
         road.left + villain.radius + 10,
         road.right - villain.radius - 10,
       );
+    } else if (villain.straight) {
+      villain.x = villain.baseX;
     } else {
       villain.x = villain.baseX + Math.sin(villain.phase) * villain.radius * villain.wobble;
     }
@@ -639,7 +642,7 @@ function update(dt) {
       } else {
         damagePlayer(villain.hp === 2 ? 17 : 11, villain.x, villain.y);
         villain.y += 72;
-        villain.baseX += villain.x > player.x ? 20 : -20;
+        if (!villain.straight) villain.baseX += villain.x > player.x ? 20 : -20;
       }
     }
     if (!villain.dead && villain.name === "\uc140\uce74\ubd09\ub7ec" && selfieStickHitsPlayer(villain)) {
@@ -1387,6 +1390,80 @@ function drawVillainLabel(v, yOffset, weight = 800) {
 function drawVillain(v) {
   ctx.save();
   ctx.translate(v.x, v.y);
+
+  if (v.name === "\ub7ec\ub2dd\ud06c\ub8e8") {
+    const step = Math.sin(v.phase * 1.6) * 2.8;
+    ctx.fillStyle = "rgba(0, 0, 0, 0.25)";
+    ctx.beginPath();
+    ctx.ellipse(0, 48, 48, 15, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = "rgba(239, 68, 68, 0.18)";
+    ctx.beginPath();
+    ctx.roundRect(-42, -62, 84, 120, 18);
+    ctx.fill();
+    ctx.strokeStyle = "rgba(255,255,255,0.34)";
+    ctx.lineWidth = 3;
+    ctx.setLineDash([10, 8]);
+    ctx.strokeRect(-39, -58, 78, 112);
+    ctx.setLineDash([]);
+
+    const drawCrewRunner = (x, y, color, index) => {
+      const gait = Math.sin(v.phase * 2.2 + index * 0.8) * 4;
+      ctx.save();
+      ctx.translate(x, y + step);
+      ctx.strokeStyle = "#111827";
+      ctx.lineWidth = 3;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(-5, 8);
+      ctx.lineTo(-12, 19 + gait);
+      ctx.moveTo(5, 8);
+      ctx.lineTo(12, 19 - gait);
+      ctx.moveTo(-6, -5);
+      ctx.lineTo(-14, 5 - gait);
+      ctx.moveTo(6, -5);
+      ctx.lineTo(14, 5 + gait);
+      ctx.stroke();
+
+      ctx.fillStyle = v.hitFlash > 0 ? "#ffffff" : color;
+      ctx.beginPath();
+      ctx.roundRect(-9, -12, 18, 22, 6);
+      ctx.fill();
+      ctx.fillStyle = "#f4d5b5";
+      ctx.beginPath();
+      ctx.arc(0, -22, 7, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#111827";
+      ctx.fillRect(-5, -28, 10, 5);
+      ctx.restore();
+    };
+
+    let runnerIndex = 0;
+    for (let row = 0; row < 5; row += 1) {
+      for (let col = 0; col < 2; col += 1) {
+        const x = col === 0 ? -18 : 18;
+        const y = -40 + row * 23;
+        const color = row % 2 === 0 ? (col === 0 ? "#2563eb" : "#ef4444") : (col === 0 ? "#16a34a" : "#f97316");
+        drawCrewRunner(x, y, color, runnerIndex);
+        runnerIndex += 1;
+      }
+    }
+
+    ctx.fillStyle = "#fff7ed";
+    ctx.beginPath();
+    ctx.roundRect(-34, -75, 68, 18, 8);
+    ctx.fill();
+    ctx.fillStyle = "#111827";
+    ctx.font = "900 10px Malgun Gothic, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("2x5 PACK", 0, -66);
+
+    drawVillainLabel(v, v.radius + 25, 900);
+    ctx.restore();
+    return;
+  }
 
   if (v.name === "\uc5ed\uc8fc\ud589\ub7ec") {
     const bob = Math.sin(v.phase * 1.8) * 2.5;
