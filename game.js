@@ -240,6 +240,7 @@ function spawnVillain() {
     phase: rand(0, Math.PI * 2),
     speed: (game.speed + extraSpeed + rand(-16, 52)) * (type.speedScale || 1),
     hitFlash: 0,
+    attackFlash: 0,
   });
 }
 
@@ -394,6 +395,40 @@ function circleHit(a, b) {
   const dy = a.y - b.y;
   const r = a.radius + b.radius;
   return dx * dx + dy * dy < r * r;
+}
+
+function pointSegmentDistance(px, py, ax, ay, bx, by) {
+  const dx = bx - ax;
+  const dy = by - ay;
+  const lengthSq = dx * dx + dy * dy || 1;
+  const t = clamp(((px - ax) * dx + (py - ay) * dy) / lengthSq, 0, 1);
+  const x = ax + dx * t;
+  const y = ay + dy * t;
+  return Math.hypot(px - x, py - y);
+}
+
+function selfieStickPose(v) {
+  const swing = Math.sin(v.phase * 3.4);
+  const snap = Math.sin(v.phase * 6.8) * 0.12;
+  const angle = -Math.PI * 0.28 + swing * 1.22 + snap;
+  const start = { x: 18, y: -18 };
+  const length = 82;
+  const end = {
+    x: start.x + Math.cos(angle) * length,
+    y: start.y + Math.sin(angle) * length,
+  };
+  return { start, end, angle, swing };
+}
+
+function selfieStickHitsPlayer(v) {
+  const pose = selfieStickPose(v);
+  const ax = v.x + pose.start.x;
+  const ay = v.y + pose.start.y;
+  const bx = v.x + pose.end.x;
+  const by = v.y + pose.end.y;
+  const stickDistance = pointSegmentDistance(game.player.x, game.player.y, ax, ay, bx, by);
+  const phoneDistance = Math.hypot(game.player.x - bx, game.player.y - by);
+  return stickDistance < game.player.radius + 7 || phoneDistance < game.player.radius + 18;
 }
 
 function damagePlayer(amount, x, y) {
@@ -597,6 +632,7 @@ function update(dt) {
       villain.x = villain.baseX + Math.sin(villain.phase) * villain.radius * villain.wobble;
     }
     villain.hitFlash = Math.max(0, villain.hitFlash - dt);
+    villain.attackFlash = Math.max(0, villain.attackFlash - dt);
     if (circleHit(player, villain)) {
       if (riderActive || transformActive) {
         defeatVillain(villain, "\ub3cc\ud30c!");
@@ -604,6 +640,17 @@ function update(dt) {
         damagePlayer(villain.hp === 2 ? 17 : 11, villain.x, villain.y);
         villain.y += 72;
         villain.baseX += villain.x > player.x ? 20 : -20;
+      }
+    }
+    if (!villain.dead && villain.name === "\uc140\uce74\ubd09\ub7ec" && selfieStickHitsPlayer(villain)) {
+      if (riderActive || transformActive) {
+        defeatVillain(villain, "\uc140\uce74\ubd09 \ub3cc\ud30c!");
+      } else {
+        villain.attackFlash = 0.18;
+        const pose = selfieStickPose(villain);
+        damagePlayer(13, villain.x + pose.end.x, villain.y + pose.end.y);
+        villain.y += 28;
+        villain.baseX += villain.x > player.x ? 14 : -14;
       }
     }
   }
@@ -1471,9 +1518,11 @@ function drawVillain(v) {
   }
 
   if (v.name === "\uc140\uce74\ubd09\ub7ec") {
-    const wave = Math.sin(v.phase * 2.2) * 0.55;
-    const phoneX = 42 + Math.sin(v.phase * 2.2) * 10;
-    const phoneY = -42 + Math.cos(v.phase * 1.7) * 8;
+    const pose = selfieStickPose(v);
+    const wave = pose.angle + Math.PI * 0.28;
+    const phoneX = pose.end.x;
+    const phoneY = pose.end.y;
+    const flash = v.attackFlash > 0;
 
     ctx.fillStyle = "rgba(0, 0, 0, 0.22)";
     ctx.beginPath();
@@ -1489,32 +1538,33 @@ function drawVillain(v) {
     ctx.moveTo(9, 13);
     ctx.lineTo(19, 29);
     ctx.moveTo(11, -11);
-    ctx.lineTo(24, -22);
+    ctx.lineTo(pose.start.x + 4, pose.start.y - 4);
     ctx.stroke();
 
-    ctx.strokeStyle = "#e5e7eb";
-    ctx.lineWidth = 4;
+    ctx.strokeStyle = flash ? "#ff5c5c" : "#e5e7eb";
+    ctx.lineWidth = flash ? 7 : 5;
     ctx.beginPath();
-    ctx.moveTo(22, -21);
+    ctx.moveTo(pose.start.x, pose.start.y);
     ctx.lineTo(phoneX, phoneY);
     ctx.stroke();
 
     ctx.save();
     ctx.translate(phoneX, phoneY);
     ctx.rotate(wave);
-    ctx.fillStyle = "#111827";
+    ctx.fillStyle = flash ? "#7f1d1d" : "#111827";
     ctx.beginPath();
-    ctx.roundRect(-9, -14, 18, 28, 4);
+    ctx.roundRect(-11, -16, 22, 32, 5);
     ctx.fill();
-    ctx.fillStyle = "#68e5ff";
-    ctx.fillRect(-6, -10, 12, 18);
+    ctx.fillStyle = flash ? "#fecaca" : "#68e5ff";
+    ctx.fillRect(-7, -11, 14, 20);
     ctx.restore();
 
-    ctx.strokeStyle = "rgba(255,255,255,0.65)";
-    ctx.lineWidth = 2;
+    ctx.strokeStyle = flash ? "rgba(255, 92, 92, 0.9)" : "rgba(255,255,255,0.65)";
+    ctx.lineWidth = flash ? 3 : 2;
     ctx.beginPath();
-    ctx.arc(phoneX, phoneY, 19, -0.8 + wave, -0.25 + wave);
-    ctx.arc(phoneX, phoneY, 25, 0.25 + wave, 0.85 + wave);
+    ctx.arc(phoneX, phoneY, 21, -0.9 + wave, -0.2 + wave);
+    ctx.arc(phoneX, phoneY, 31, 0.15 + wave, 0.95 + wave);
+    ctx.arc(pose.start.x, pose.start.y, 54, -0.34 + wave, 0.2 + wave);
     ctx.stroke();
 
     ctx.fillStyle = v.hitFlash > 0 ? "#ffffff" : "#a78bfa";
