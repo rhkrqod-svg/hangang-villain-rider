@@ -868,28 +868,82 @@ function drawPlayer() {
   ctx.closePath();
   ctx.stroke();
 
+  ctx.strokeStyle = "#101516";
+  ctx.lineWidth = 5;
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.moveTo(-12, -23);
+  ctx.lineTo(-24, -5);
+  ctx.moveTo(12, -23);
+  ctx.lineTo(24, -5);
+  ctx.moveTo(-8, 0);
+  ctx.lineTo(-18, 17);
+  ctx.moveTo(8, 0);
+  ctx.lineTo(18, 17);
+  ctx.stroke();
+  ctx.lineCap = "butt";
+
+  ctx.fillStyle = riderActive ? "#17212a" : "#111827";
+  ctx.beginPath();
+  ctx.roundRect(-11, -5, 22, 16, 6);
+  ctx.fill();
+
+  ctx.fillStyle = riderActive ? "#17212a" : "#0f766e";
+  ctx.beginPath();
+  ctx.roundRect(-16, -36, 32, 34, 8);
+  ctx.fill();
+  ctx.fillStyle = riderActive ? "#68e5ff" : "#e8fff7";
+  ctx.beginPath();
+  ctx.moveTo(-11, -32);
+  ctx.lineTo(0, -8);
+  ctx.lineTo(11, -32);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = riderActive ? "#dffcff" : "#31d6a4";
+  ctx.fillRect(-13, -28, 26, 5);
+
+  ctx.fillStyle = "#0b1117";
+  ctx.beginPath();
+  ctx.arc(-24, -5, 5, 0, Math.PI * 2);
+  ctx.arc(24, -5, 5, 0, Math.PI * 2);
+  ctx.fill();
+
   ctx.fillStyle = riderActive ? "#101820" : "#f4d5b5";
   ctx.beginPath();
-  ctx.arc(0, -48, 10, 0, Math.PI * 2);
+  ctx.ellipse(0, -48, 10, 11, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = riderActive ? "#0b1520" : "#ffffff";
+  ctx.beginPath();
+  ctx.ellipse(0, -56, 17, 11, 0, Math.PI, Math.PI * 2);
+  ctx.lineTo(15, -50);
+  ctx.quadraticCurveTo(0, -44, -15, -50);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = riderActive ? "#68e5ff" : "#31d6a4";
+  ctx.beginPath();
+  ctx.ellipse(0, -56, 11, 5, 0, Math.PI, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = riderActive ? "#ffd66d" : "#ff5c5c";
+  ctx.beginPath();
+  ctx.moveTo(11, -55);
+  ctx.lineTo(23, -52);
+  ctx.lineTo(11, -49);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = riderActive ? "#68e5ff" : "#111827";
+  ctx.beginPath();
+  ctx.roundRect(-11, -50, 22, 5, 3);
   ctx.fill();
 
   if (riderActive) {
     ctx.fillStyle = "#68e5ff";
     ctx.beginPath();
-    ctx.ellipse(-4, -50, 6, 3, -0.15, 0, Math.PI * 2);
-    ctx.ellipse(6, -50, 6, 3, 0.15, 0, Math.PI * 2);
+    ctx.ellipse(-4, -49, 6, 3, -0.15, 0, Math.PI * 2);
+    ctx.ellipse(6, -49, 6, 3, 0.15, 0, Math.PI * 2);
     ctx.fill();
   }
-
-  ctx.fillStyle = riderActive ? "#17212a" : "#115e59";
-  ctx.beginPath();
-  ctx.roundRect(-13, -34, 26, 35, 7);
-  ctx.fill();
-
-  ctx.fillStyle = riderActive ? "#dffcff" : "#ffffff";
-  ctx.fillRect(-10, -59, 20, 8);
-  ctx.fillStyle = riderActive ? "#68e5ff" : "#ff5c5c";
-  ctx.fillRect(7, -57, 9, 4);
 
   ctx.fillStyle = "#111827";
   ctx.fillRect(-15, -7, 30, 7);
