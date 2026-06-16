@@ -13,6 +13,7 @@ const specialBtn = document.getElementById("specialBtn");
 
 const keys = new Set();
 const hold = new Set();
+const CHARACTER_SCALE = 0.7;
 
 const gameArt = {
   background: new Image(),
@@ -112,6 +113,7 @@ const game = {
     x: 220,
     y: 620,
     radius: 25,
+    hitScale: CHARACTER_SCALE,
     tilt: 0,
   },
   villains: [],
@@ -242,6 +244,7 @@ function spawnVillain() {
     speed: (game.speed + extraSpeed + rand(-16, 52)) * (type.speedScale || 1),
     hitFlash: 0,
     attackFlash: 0,
+    hitScale: CHARACTER_SCALE,
   });
 }
 
@@ -268,6 +271,7 @@ function startBoss() {
     y: -110,
     targetY: canvas.clientHeight * 0.2,
     radius: 66,
+    hitScale: CHARACTER_SCALE,
     level: game.bossLevel,
     hp: bossHp,
     maxHp: bossHp,
@@ -328,6 +332,7 @@ function spawnMarathonWave(y, offsetSeed) {
       x: road.left + gap * (i + 0.5) + rand(-10, 10),
       y: y + rand(-12, 12),
       radius: 22,
+      hitScale: CHARACTER_SCALE,
       speed: rand(185, 250),
       phase: rand(0, Math.PI * 2),
       color: i % 2 === 0 ? "#ef4444" : "#2563eb",
@@ -394,8 +399,12 @@ function burst(x, y, color, count, power) {
 function circleHit(a, b) {
   const dx = a.x - b.x;
   const dy = a.y - b.y;
-  const r = a.radius + b.radius;
+  const r = hitRadius(a) + hitRadius(b);
   return dx * dx + dy * dy < r * r;
+}
+
+function hitRadius(entity) {
+  return entity.radius * (entity.hitScale || 1);
 }
 
 function pointSegmentDistance(px, py, ax, ay, bx, by) {
@@ -423,13 +432,13 @@ function selfieStickPose(v) {
 
 function selfieStickHitsPlayer(v) {
   const pose = selfieStickPose(v);
-  const ax = v.x + pose.start.x;
-  const ay = v.y + pose.start.y;
-  const bx = v.x + pose.end.x;
-  const by = v.y + pose.end.y;
+  const ax = v.x + pose.start.x * CHARACTER_SCALE;
+  const ay = v.y + pose.start.y * CHARACTER_SCALE;
+  const bx = v.x + pose.end.x * CHARACTER_SCALE;
+  const by = v.y + pose.end.y * CHARACTER_SCALE;
   const stickDistance = pointSegmentDistance(game.player.x, game.player.y, ax, ay, bx, by);
   const phoneDistance = Math.hypot(game.player.x - bx, game.player.y - by);
-  return stickDistance < game.player.radius + 7 || phoneDistance < game.player.radius + 18;
+  return stickDistance < hitRadius(game.player) + 7 * CHARACTER_SCALE || phoneDistance < hitRadius(game.player) + 18 * CHARACTER_SCALE;
 }
 
 function damagePlayer(amount, x, y) {
@@ -595,8 +604,9 @@ function update(dt) {
   if (keys.has("ArrowLeft") || keys.has("KeyA") || hold.has("left")) vx -= 1;
   if (keys.has("ArrowRight") || keys.has("KeyD") || hold.has("right")) vx += 1;
   const len = Math.hypot(vx, vy) || 1;
-  player.x = clamp(player.x + (vx / len) * (riderActive ? 500 : 390) * dt, road.left + player.radius + 8, road.right - player.radius - 8);
-  player.y = clamp(player.y + (vy / len) * (riderActive ? 430 : 360) * dt, canvas.clientHeight * 0.45, road.bottom - player.radius - 18);
+  const playerEdge = hitRadius(player);
+  player.x = clamp(player.x + (vx / len) * (riderActive ? 500 : 390) * dt, road.left + playerEdge + 8, road.right - playerEdge - 8);
+  player.y = clamp(player.y + (vy / len) * (riderActive ? 430 : 360) * dt, canvas.clientHeight * 0.45, road.bottom - playerEdge - 18);
   player.tilt += (vx * 0.34 - player.tilt) * Math.min(1, dt * 10);
 
   if (marathonActive) {
@@ -651,7 +661,7 @@ function update(dt) {
       } else {
         villain.attackFlash = 0.18;
         const pose = selfieStickPose(villain);
-        damagePlayer(13, villain.x + pose.end.x, villain.y + pose.end.y);
+        damagePlayer(13, villain.x + pose.end.x * CHARACTER_SCALE, villain.y + pose.end.y * CHARACTER_SCALE);
         villain.y += 28;
         villain.baseX += villain.x > player.x ? 14 : -14;
       }
@@ -951,6 +961,7 @@ function drawPlayer() {
   ctx.save();
   ctx.translate(p.x, p.y);
   ctx.rotate(p.tilt);
+  ctx.scale(CHARACTER_SCALE, CHARACTER_SCALE);
   if (riderActive) ctx.scale(1.2, 1.2);
 
   if (!riderActive && game.invincible > 0 && Math.floor(game.time * 18) % 2 === 0) {
@@ -1212,6 +1223,7 @@ function drawBoss() {
   const b = game.boss;
   ctx.save();
   ctx.translate(b.x, b.y);
+  ctx.scale(CHARACTER_SCALE, CHARACTER_SCALE);
   ctx.globalAlpha = b.hurt > 0 && Math.floor(game.time * 28) % 2 === 0 ? 0.55 : 1;
 
   ctx.fillStyle = "rgba(0, 0, 0, 0.24)";
@@ -1321,6 +1333,7 @@ function drawBossProjectile(projectile) {
 function drawMarathonRunner(runner) {
   ctx.save();
   ctx.translate(runner.x, runner.y);
+  ctx.scale(CHARACTER_SCALE, CHARACTER_SCALE);
   const step = Math.sin(runner.phase) * 5;
   ctx.globalAlpha = runner.dead ? 0.35 : 1;
 
@@ -1378,10 +1391,10 @@ function drawMarathonOverlay(w) {
 
 function drawVillainLabel(v, yOffset, weight = 800) {
   ctx.fillStyle = "#ffffff";
-  ctx.font = `${weight} 12px Malgun Gothic, sans-serif`;
+  ctx.font = `${weight} ${12 / CHARACTER_SCALE}px Malgun Gothic, sans-serif`;
   ctx.textAlign = "center";
   ctx.textBaseline = "alphabetic";
-  ctx.lineWidth = 4;
+  ctx.lineWidth = 4 / CHARACTER_SCALE;
   ctx.strokeStyle = "rgba(6, 12, 16, 0.62)";
   ctx.strokeText(v.name, 0, yOffset);
   ctx.fillText(v.name, 0, yOffset);
@@ -1390,6 +1403,7 @@ function drawVillainLabel(v, yOffset, weight = 800) {
 function drawVillain(v) {
   ctx.save();
   ctx.translate(v.x, v.y);
+  ctx.scale(CHARACTER_SCALE, CHARACTER_SCALE);
 
   if (v.name === "\ub7ec\ub2dd\ud06c\ub8e8") {
     const step = Math.sin(v.phase * 1.6) * 2.8;
@@ -1857,10 +1871,7 @@ function drawVillain(v) {
     ctx.fillStyle = "#ef4444";
     ctx.fillRect(-2, -39, 18, 7);
 
-    ctx.fillStyle = "#ffffff";
-    ctx.font = "800 11px Malgun Gothic, sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText(v.name, 0, v.radius + 26);
+    drawVillainLabel(v, v.radius + 26, 800);
     ctx.restore();
     return;
   }
@@ -1904,7 +1915,7 @@ function drawVillain(v) {
   }
 
   ctx.fillStyle = "#ffffff";
-  ctx.font = "700 12px Malgun Gothic, sans-serif";
+  ctx.font = `700 ${12 / CHARACTER_SCALE}px Malgun Gothic, sans-serif`;
   ctx.textAlign = "center";
   ctx.fillText(v.name, 0, v.radius + 18);
   ctx.restore();
