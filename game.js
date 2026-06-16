@@ -236,13 +236,16 @@ function ringBell() {
   game.bells -= 1;
   game.blasts.push({
     x: game.player.x,
-    y: game.player.y - 24,
-    radius: 18,
-    maxRadius: 164,
-    life: 0.36,
+    y: game.player.y - 64,
+    vx: game.player.tilt * 80,
+    vy: -720,
+    radius: 14,
+    spin: 0,
+    trail: [],
+    life: 1.18,
     age: 0,
   });
-  burst(game.player.x, game.player.y - 28, "#ffc857", 14, 220);
+  burst(game.player.x, game.player.y - 58, "#ffc857", 8, 150);
   updateHud();
 }
 
@@ -390,16 +393,22 @@ function update(dt) {
 
   for (const blast of game.blasts) {
     blast.age += dt;
-    blast.radius = 18 + (blast.maxRadius - 18) * (blast.age / blast.life);
+    blast.x += blast.vx * dt;
+    blast.y += blast.vy * dt;
+    blast.spin += dt * 18;
+    blast.trail.push({ x: blast.x, y: blast.y, age: 0 });
+    for (const point of blast.trail) point.age += dt;
+    blast.trail = blast.trail.filter((point) => point.age < 0.22);
     for (const villain of game.villains) {
       if (villain.dead) continue;
       const dx = villain.x - blast.x;
       const dy = villain.y - blast.y;
-      if (Math.hypot(dx, dy) < blast.radius + villain.radius) {
-        villain.hp -= 1;
+      if (Math.hypot(dx, dy) < blast.radius + villain.radius + 6) {
+        villain.hp = 0;
         villain.hitFlash = 0.12;
-        villain.y -= 78;
-        if (villain.hp <= 0) defeatVillain(villain, "\ud1f4\uce58!");
+        blast.dead = true;
+        defeatVillain(villain, "\uba85\uc911!");
+        break;
       }
     }
   }
@@ -417,7 +426,7 @@ function update(dt) {
   const h = canvas.clientHeight;
   game.villains = game.villains.filter((v) => !v.dead && v.y < h + 110);
   game.items = game.items.filter((i) => !i.dead && i.y < h + 70);
-  game.blasts = game.blasts.filter((b) => b.age < b.life);
+  game.blasts = game.blasts.filter((b) => !b.dead && b.age < b.life && b.y > -80);
   game.particles = game.particles.filter((p) => p.age < p.life);
   game.comboText = game.comboText.filter((t) => t.age < t.life);
 
@@ -803,12 +812,49 @@ function drawItem(item) {
 }
 
 function drawBlast(blast) {
-  const alpha = 1 - blast.age / blast.life;
-  ctx.strokeStyle = `rgba(255, 200, 87, ${alpha})`;
-  ctx.lineWidth = 8 * alpha + 2;
+  ctx.save();
+  for (const point of blast.trail) {
+    const alpha = 1 - point.age / 0.22;
+    ctx.globalAlpha = alpha * 0.55;
+    ctx.fillStyle = "#ffc857";
+    ctx.beginPath();
+    ctx.ellipse(point.x, point.y + 18 * alpha, 6 * alpha, 18 * alpha, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.globalAlpha = 1;
+  ctx.translate(blast.x, blast.y);
+  ctx.rotate(blast.spin);
+
+  ctx.fillStyle = "#fff4d6";
   ctx.beginPath();
-  ctx.arc(blast.x, blast.y, blast.radius, 0, Math.PI * 2);
+  ctx.moveTo(0, -22);
+  ctx.lineTo(13, 2);
+  ctx.lineTo(7, 18);
+  ctx.lineTo(-7, 18);
+  ctx.lineTo(-13, 2);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = "#ffc857";
+  ctx.beginPath();
+  ctx.arc(0, 0, 10, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.strokeStyle = "#10201e";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.arc(0, -2, 6, Math.PI * 0.1, Math.PI * 0.9);
   ctx.stroke();
+
+  ctx.fillStyle = "#ff7a59";
+  ctx.beginPath();
+  ctx.moveTo(-7, 19);
+  ctx.lineTo(0, 33 + Math.sin(blast.spin) * 4);
+  ctx.lineTo(7, 19);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
 }
 
 function drawParticles() {
