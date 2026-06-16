@@ -20,6 +20,7 @@ const villainTypes = [
   { name: "\uc140\uce74\ubd09\ub7ec", color: "#a78bfa", hp: 1, radius: 24, wobble: 0.45, score: 75 },
   { name: "\uae38\ub9c9\uc218\ub2e4\ub2e8", color: "#f97316", hp: 2, radius: 31, wobble: 0.35, score: 140 },
   { name: "\ub3d7\uc790\ub9ac\ud655\uc7a5\ub7ec", color: "#38bdf8", hp: 2, radius: 34, wobble: 0.2, score: 150 },
+  { name: "\ub178\ube0c\ub808\ub07c \ud53d\uc2dc", color: "#111827", hp: 2, radius: 29, wobble: 1.9, score: 170, skid: true },
 ];
 
 const backgroundThemes = [
@@ -160,7 +161,7 @@ function updateHud() {
   bellsEl.textContent = game.bells;
   specialBtn.disabled = !game.running || game.paused || game.over || game.bells < 10 || game.riderTimer > 0 || game.transformTimer > 0;
   specialBtn.classList.toggle("ready", !specialBtn.disabled);
-  specialBtn.textContent = game.riderTimer > 0 ? Math.ceil(Math.min(10, game.riderTimer)) : "\ubcc0\uc2e0<<";
+  specialBtn.textContent = game.riderTimer > 0 ? Math.ceil(Math.min(10, game.riderTimer)) : "\ubcc0\uc2e0";
 }
 
 function rand(min, max) {
@@ -574,9 +575,18 @@ function update(dt) {
   }
 
   for (const villain of game.villains) {
-    villain.y += villain.speed * dt;
-    villain.phase += dt * 3.2;
-    villain.x = villain.baseX + Math.sin(villain.phase) * villain.radius * villain.wobble;
+    villain.y += villain.speed * (villain.skid ? 1.08 : 1) * dt;
+    villain.phase += dt * (villain.skid ? 5.8 : 3.2);
+    if (villain.skid) {
+      const skidRange = road.width * 0.29;
+      villain.x = clamp(
+        villain.baseX + Math.sin(villain.phase) * skidRange + Math.sin(villain.phase * 2.3) * 13,
+        road.left + villain.radius + 10,
+        road.right - villain.radius - 10,
+      );
+    } else {
+      villain.x = villain.baseX + Math.sin(villain.phase) * villain.radius * villain.wobble;
+    }
     villain.hitFlash = Math.max(0, villain.hitFlash - dt);
     if (circleHit(player, villain)) {
       if (riderActive || transformActive) {
@@ -1215,6 +1225,60 @@ function drawMarathonOverlay(w) {
 function drawVillain(v) {
   ctx.save();
   ctx.translate(v.x, v.y);
+
+  if (v.skid) {
+    const skidLean = Math.sin(v.phase) * 0.28;
+    ctx.rotate(skidLean);
+
+    ctx.strokeStyle = "rgba(255,255,255,0.32)";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(-44, 38);
+    ctx.quadraticCurveTo(-12, 48, 32, 34);
+    ctx.moveTo(-34, 48);
+    ctx.quadraticCurveTo(-6, 56, 38, 43);
+    ctx.stroke();
+
+    ctx.fillStyle = v.hitFlash > 0 ? "#ffffff" : "#facc15";
+    ctx.beginPath();
+    ctx.moveTo(-36, 4);
+    ctx.quadraticCurveTo(-4, -28, 42, -18);
+    ctx.quadraticCurveTo(12, -5, -8, 20);
+    ctx.quadraticCurveTo(20, 14, 48, 5);
+    ctx.quadraticCurveTo(4, 38, -42, 25);
+    ctx.quadraticCurveTo(-56, 17, -36, 4);
+    ctx.fill();
+
+    ctx.strokeStyle = "#0b1117";
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.arc(-24, 24, 13, 0, Math.PI * 2);
+    ctx.arc(24, 24, 13, 0, Math.PI * 2);
+    ctx.moveTo(-24, 24);
+    ctx.lineTo(0, 2);
+    ctx.lineTo(24, 24);
+    ctx.lineTo(-2, 24);
+    ctx.closePath();
+    ctx.stroke();
+
+    ctx.fillStyle = "#111827";
+    ctx.beginPath();
+    ctx.roundRect(-10, -15, 26, 26, 7);
+    ctx.fill();
+    ctx.fillStyle = "#f4d5b5";
+    ctx.beginPath();
+    ctx.arc(6, -28, 9, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#ef4444";
+    ctx.fillRect(-2, -39, 18, 7);
+
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "800 11px Malgun Gothic, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(v.name, 0, v.radius + 26);
+    ctx.restore();
+    return;
+  }
 
   ctx.fillStyle = v.hitFlash > 0 ? "#ffffff" : v.color;
   ctx.beginPath();
