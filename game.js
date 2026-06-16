@@ -25,10 +25,10 @@ gameArt.background.onload = () => {
 gameArt.background.src = "assets/hangang-arcade-bg.png";
 
 const villainTypes = [
-  { name: "\uc5ed\uc8fc\ud589\ub7ec", color: "#ff5c5c", hp: 1, radius: 25, wobble: 0.8, score: 80 },
+  { name: "\uc5ed\uc8fc\ud589\ub7ec", color: "#ff5c5c", hp: 1, radius: 25, wobble: 0.8, score: 80, speedScale: 1.22 },
   { name: "\ud0a5\ubcf4\ub4dc\ud3ed\uc8fc\uc871", color: "#ffc857", hp: 1, radius: 22, wobble: 1.3, score: 95 },
   { name: "\uc140\uce74\ubd09\ub7ec", color: "#a78bfa", hp: 1, radius: 24, wobble: 0.45, score: 75 },
-  { name: "\uae38\ub9c9\uc218\ub2e4\ub2e8", color: "#f97316", hp: 2, radius: 31, wobble: 0.35, score: 140 },
+  { name: "\uae38\ub9c9\uc218\ub2e4\ub2e8", color: "#f97316", hp: 2, radius: 31, wobble: 0.35, score: 140, speedScale: 0.72 },
   { name: "\ub178\ube0c\ub808\ub07c \ud53d\uc2dc", color: "#111827", hp: 2, radius: 29, wobble: 1.9, score: 170, skid: true },
 ];
 
@@ -238,7 +238,7 @@ function spawnVillain() {
     hp: type.hp,
     baseX: x,
     phase: rand(0, Math.PI * 2),
-    speed: game.speed + extraSpeed + rand(-16, 52),
+    speed: (game.speed + extraSpeed + rand(-16, 52)) * (type.speedScale || 1),
     hitFlash: 0,
   });
 }
