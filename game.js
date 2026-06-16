@@ -14,6 +14,16 @@ const specialBtn = document.getElementById("specialBtn");
 const keys = new Set();
 const hold = new Set();
 
+const gameArt = {
+  background: new Image(),
+  backgroundReady: false,
+};
+
+gameArt.background.onload = () => {
+  gameArt.backgroundReady = true;
+};
+gameArt.background.src = "assets/hangang-arcade-bg.png";
+
 const villainTypes = [
   { name: "\uc5ed\uc8fc\ud589\ub7ec", color: "#ff5c5c", hp: 1, radius: 25, wobble: 0.8, score: 80 },
   { name: "\ud0a5\ubcf4\ub4dc\ud3ed\uc8fc\uc871", color: "#ffc857", hp: 1, radius: 22, wobble: 1.3, score: 95 },
@@ -687,19 +697,36 @@ function update(dt) {
 function drawBackground(w, h, t) {
   const road = roadBounds();
   const theme = currentTheme(t);
-  const sky = ctx.createLinearGradient(0, 0, 0, h);
-  sky.addColorStop(0, theme.skyTop);
-  sky.addColorStop(0.44, theme.skyBottom);
-  sky.addColorStop(1, theme.roadDark);
-  ctx.fillStyle = sky;
-  ctx.fillRect(0, 0, w, h);
+  const hasArtBackground = gameArt.backgroundReady;
 
+  if (hasArtBackground) {
+    drawCoverImage(gameArt.background, w, h);
+    const artTint = ctx.createLinearGradient(0, 0, 0, h);
+    artTint.addColorStop(0, theme.skyTop);
+    artTint.addColorStop(0.48, theme.skyBottom);
+    artTint.addColorStop(1, theme.roadDark);
+    ctx.globalAlpha = 0.22;
+    ctx.fillStyle = artTint;
+    ctx.fillRect(0, 0, w, h);
+    ctx.globalAlpha = 1;
+  } else {
+    const sky = ctx.createLinearGradient(0, 0, 0, h);
+    sky.addColorStop(0, theme.skyTop);
+    sky.addColorStop(0.44, theme.skyBottom);
+    sky.addColorStop(1, theme.roadDark);
+    ctx.fillStyle = sky;
+    ctx.fillRect(0, 0, w, h);
+  }
+
+  if (hasArtBackground) ctx.globalAlpha = 0.32;
   drawSkyline(w, h, road, theme, t);
   drawRiver(w, h, road, theme, t);
   drawPark(w, h, road, theme, t);
   drawBridge(w, h, road, theme, t);
+  ctx.globalAlpha = 1;
 
   ctx.fillStyle = theme.roadDark;
+  if (hasArtBackground) ctx.globalAlpha = 0.74;
   ctx.fillRect(road.left - 22, 0, road.width + 44, h);
 
   const roadGradient = ctx.createLinearGradient(road.left, 0, road.right, 0);
@@ -710,6 +737,7 @@ function drawBackground(w, h, t) {
   roadGradient.addColorStop(1, theme.roadDark);
   ctx.fillStyle = roadGradient;
   ctx.fillRect(road.left, 0, road.width, h);
+  ctx.globalAlpha = 1;
 
   ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
   ctx.lineWidth = 1;
@@ -820,6 +848,16 @@ function drawBridge(w, h, road, theme, t) {
     ctx.lineTo(x + 18, y - 48);
     ctx.stroke();
   }
+}
+
+function drawCoverImage(image, w, h) {
+  const iw = image.naturalWidth || image.width;
+  const ih = image.naturalHeight || image.height;
+  if (!iw || !ih) return;
+  const scale = Math.max(w / iw, h / ih) * 1.04;
+  const dw = iw * scale;
+  const dh = ih * scale;
+  ctx.drawImage(image, (w - dw) / 2, (h - dh) / 2, dw, dh);
 }
 
 function drawRoadGlow(w, h, road, theme, t) {
@@ -1221,9 +1259,244 @@ function drawMarathonOverlay(w) {
   ctx.restore();
 }
 
+function drawVillainLabel(v, yOffset, weight = 800) {
+  ctx.fillStyle = "#ffffff";
+  ctx.font = `${weight} 12px Malgun Gothic, sans-serif`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "alphabetic";
+  ctx.lineWidth = 4;
+  ctx.strokeStyle = "rgba(6, 12, 16, 0.62)";
+  ctx.strokeText(v.name, 0, yOffset);
+  ctx.fillText(v.name, 0, yOffset);
+}
+
 function drawVillain(v) {
   ctx.save();
   ctx.translate(v.x, v.y);
+
+  if (v.name === "\uc5ed\uc8fc\ud589\ub7ec") {
+    const bob = Math.sin(v.phase * 1.8) * 2.5;
+    ctx.fillStyle = "rgba(0, 0, 0, 0.24)";
+    ctx.beginPath();
+    ctx.ellipse(0, 38, 36, 12, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.strokeStyle = "#071114";
+    ctx.lineWidth = 6;
+    ctx.beginPath();
+    ctx.arc(0, 28, 19, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.strokeStyle = "#d9f7ff";
+    ctx.lineWidth = 2;
+    for (let i = 0; i < 6; i += 1) {
+      const angle = (Math.PI * 2 * i) / 6;
+      ctx.beginPath();
+      ctx.moveTo(0, 28);
+      ctx.lineTo(Math.cos(angle) * 17, 28 + Math.sin(angle) * 17);
+      ctx.stroke();
+    }
+
+    ctx.strokeStyle = "#111827";
+    ctx.lineWidth = 5;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(0, 10);
+    ctx.lineTo(0, 31);
+    ctx.moveTo(-22, 4);
+    ctx.lineTo(22, 4);
+    ctx.moveTo(-18, 6);
+    ctx.lineTo(-5, 18);
+    ctx.moveTo(18, 6);
+    ctx.lineTo(5, 18);
+    ctx.stroke();
+
+    ctx.fillStyle = v.hitFlash > 0 ? "#ffffff" : "#ff5c5c";
+    ctx.beginPath();
+    ctx.roundRect(-16, -18 + bob, 32, 34, 9);
+    ctx.fill();
+    ctx.fillStyle = "#fff4d6";
+    ctx.beginPath();
+    ctx.arc(0, -34 + bob, 12, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#111827";
+    ctx.beginPath();
+    ctx.ellipse(-5, -36 + bob, 3, 4, -0.2, 0, Math.PI * 2);
+    ctx.ellipse(6, -36 + bob, 3, 4, 0.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#111827";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(-7, -27 + bob);
+    ctx.quadraticCurveTo(0, -31 + bob, 7, -27 + bob);
+    ctx.stroke();
+
+    ctx.fillStyle = "#0f172a";
+    ctx.beginPath();
+    ctx.ellipse(0, -45 + bob, 17, 10, 0, Math.PI, Math.PI * 2);
+    ctx.lineTo(16, -39 + bob);
+    ctx.quadraticCurveTo(0, -33 + bob, -16, -39 + bob);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = "#facc15";
+    ctx.fillRect(-10, -43 + bob, 20, 4);
+
+    drawVillainLabel(v, v.radius + 24, 900);
+    ctx.restore();
+    return;
+  }
+
+  if (v.name === "\uae38\ub9c9\uc218\ub2e4\ub2e8") {
+    const lean = Math.sin(v.phase * 1.4) * 2;
+    ctx.fillStyle = "rgba(0, 0, 0, 0.23)";
+    ctx.beginPath();
+    ctx.ellipse(0, 40, 51, 13, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    const drawBackCyclist = (x, color, phaseShift) => {
+      const pedal = Math.sin(v.phase + phaseShift) * 4;
+      ctx.save();
+      ctx.translate(x, lean);
+      ctx.strokeStyle = "#101516";
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.arc(0, 29, 15, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.strokeStyle = "#d1d5db";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(0, 29);
+      ctx.lineTo(-10, 19);
+      ctx.lineTo(8, 19);
+      ctx.closePath();
+      ctx.stroke();
+
+      ctx.strokeStyle = "#111827";
+      ctx.lineWidth = 5;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(-8, 7);
+      ctx.lineTo(-18, 19 + pedal);
+      ctx.moveTo(8, 7);
+      ctx.lineTo(18, 19 - pedal);
+      ctx.moveTo(-12, -11);
+      ctx.lineTo(-22, 2);
+      ctx.moveTo(12, -11);
+      ctx.lineTo(22, 2);
+      ctx.stroke();
+
+      ctx.fillStyle = v.hitFlash > 0 ? "#ffffff" : color;
+      ctx.beginPath();
+      ctx.roundRect(-15, -20, 30, 32, 8);
+      ctx.fill();
+      ctx.fillStyle = "#1f2937";
+      ctx.beginPath();
+      ctx.arc(0, -35, 12, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#f4d5b5";
+      ctx.beginPath();
+      ctx.arc(0, -30, 7, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    };
+
+    drawBackCyclist(-21, "#f97316", 0);
+    drawBackCyclist(21, "#fb923c", Math.PI);
+
+    ctx.fillStyle = "rgba(255,255,255,0.9)";
+    ctx.beginPath();
+    ctx.ellipse(-34, -54, 13, 8, -0.2, 0, Math.PI * 2);
+    ctx.ellipse(34, -52, 13, 8, 0.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#f97316";
+    ctx.beginPath();
+    ctx.arc(-38, -54, 2, 0, Math.PI * 2);
+    ctx.arc(-31, -54, 2, 0, Math.PI * 2);
+    ctx.arc(30, -52, 2, 0, Math.PI * 2);
+    ctx.arc(37, -52, 2, 0, Math.PI * 2);
+    ctx.fill();
+
+    drawVillainLabel(v, v.radius + 26, 900);
+    ctx.restore();
+    return;
+  }
+
+  if (v.name === "\uc140\uce74\ubd09\ub7ec") {
+    const wave = Math.sin(v.phase * 2.2) * 0.55;
+    const phoneX = 42 + Math.sin(v.phase * 2.2) * 10;
+    const phoneY = -42 + Math.cos(v.phase * 1.7) * 8;
+
+    ctx.fillStyle = "rgba(0, 0, 0, 0.22)";
+    ctx.beginPath();
+    ctx.ellipse(0, 35, 31, 10, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.strokeStyle = "#111827";
+    ctx.lineWidth = 5;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(-9, 13);
+    ctx.lineTo(-19, 29);
+    ctx.moveTo(9, 13);
+    ctx.lineTo(19, 29);
+    ctx.moveTo(11, -11);
+    ctx.lineTo(24, -22);
+    ctx.stroke();
+
+    ctx.strokeStyle = "#e5e7eb";
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(22, -21);
+    ctx.lineTo(phoneX, phoneY);
+    ctx.stroke();
+
+    ctx.save();
+    ctx.translate(phoneX, phoneY);
+    ctx.rotate(wave);
+    ctx.fillStyle = "#111827";
+    ctx.beginPath();
+    ctx.roundRect(-9, -14, 18, 28, 4);
+    ctx.fill();
+    ctx.fillStyle = "#68e5ff";
+    ctx.fillRect(-6, -10, 12, 18);
+    ctx.restore();
+
+    ctx.strokeStyle = "rgba(255,255,255,0.65)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(phoneX, phoneY, 19, -0.8 + wave, -0.25 + wave);
+    ctx.arc(phoneX, phoneY, 25, 0.25 + wave, 0.85 + wave);
+    ctx.stroke();
+
+    ctx.fillStyle = v.hitFlash > 0 ? "#ffffff" : "#a78bfa";
+    ctx.beginPath();
+    ctx.roundRect(-16, -9, 32, 30, 9);
+    ctx.fill();
+    ctx.fillStyle = "#f4d5b5";
+    ctx.beginPath();
+    ctx.arc(0, -25, 12, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#111827";
+    ctx.beginPath();
+    ctx.arc(-5, -27, 3, 0, Math.PI * 2);
+    ctx.arc(6, -27, 3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#111827";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(1, -22, 6, 0.12 * Math.PI, 0.88 * Math.PI);
+    ctx.stroke();
+    ctx.fillStyle = "#7c3aed";
+    ctx.beginPath();
+    ctx.ellipse(0, -36, 15, 9, 0, Math.PI, Math.PI * 2);
+    ctx.lineTo(14, -30);
+    ctx.quadraticCurveTo(0, -25, -14, -30);
+    ctx.closePath();
+    ctx.fill();
+
+    drawVillainLabel(v, v.radius + 25, 900);
+    ctx.restore();
+    return;
+  }
 
   if (v.skid) {
     const skidLean = Math.sin(v.phase) * 0.28;
