@@ -884,16 +884,32 @@ function drawPlayer() {
   ctx.save();
   ctx.translate(p.x, p.y);
   ctx.rotate(p.tilt);
+  if (riderActive) ctx.scale(1.2, 1.2);
 
   if (!riderActive && game.invincible > 0 && Math.floor(game.time * 18) % 2 === 0) {
     ctx.globalAlpha = 0.5;
   }
 
   if (riderActive) {
-    ctx.globalAlpha = 0.34 + Math.sin(game.time * 18) * 0.08;
+    ctx.globalAlpha = 0.24 + Math.sin(game.time * 18) * 0.06;
+    ctx.fillStyle = "#dffcff";
+    ctx.beginPath();
+    ctx.ellipse(0, 12, 58, 92, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 0.42 + Math.sin(game.time * 18) * 0.08;
     ctx.fillStyle = "#68e5ff";
     ctx.beginPath();
-    ctx.ellipse(0, 4, 42, 74, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, 4, 46, 82, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 0.34;
+    ctx.fillStyle = "#ffd66d";
+    ctx.beginPath();
+    ctx.moveTo(-32, 44);
+    ctx.lineTo(-48, 72 + Math.sin(game.time * 16) * 5);
+    ctx.lineTo(-18, 55);
+    ctx.moveTo(32, 44);
+    ctx.lineTo(48, 72 + Math.cos(game.time * 16) * 5);
+    ctx.lineTo(18, 55);
     ctx.fill();
     ctx.globalAlpha = 1;
   }
@@ -939,6 +955,22 @@ function drawPlayer() {
   ctx.beginPath();
   ctx.roundRect(-16, -36, 32, 34, 8);
   ctx.fill();
+  if (riderActive) {
+    ctx.fillStyle = "#26384a";
+    ctx.beginPath();
+    ctx.roundRect(-25, -34, 15, 15, 5);
+    ctx.roundRect(10, -34, 15, 15, 5);
+    ctx.fill();
+    ctx.fillStyle = "#ffd66d";
+    ctx.beginPath();
+    ctx.moveTo(-18, -35);
+    ctx.lineTo(-35, -25);
+    ctx.lineTo(-18, -18);
+    ctx.moveTo(18, -35);
+    ctx.lineTo(35, -25);
+    ctx.lineTo(18, -18);
+    ctx.fill();
+  }
   ctx.fillStyle = riderActive ? "#68e5ff" : "#e8fff7";
   ctx.beginPath();
   ctx.moveTo(-11, -32);
@@ -948,6 +980,17 @@ function drawPlayer() {
   ctx.fill();
   ctx.fillStyle = riderActive ? "#dffcff" : "#31d6a4";
   ctx.fillRect(-13, -28, 26, 5);
+  if (riderActive) {
+    ctx.fillStyle = "#ffd66d";
+    ctx.beginPath();
+    ctx.arc(0, -23, 5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#68e5ff";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(0, -23, 10 + Math.sin(game.time * 12) * 2, 0, Math.PI * 2);
+    ctx.stroke();
+  }
 
   ctx.fillStyle = "#0b1117";
   ctx.beginPath();
@@ -974,7 +1017,7 @@ function drawPlayer() {
   ctx.fillStyle = riderActive ? "#ffd66d" : "#ff5c5c";
   ctx.beginPath();
   ctx.moveTo(11, -55);
-  ctx.lineTo(23, -52);
+  ctx.lineTo(riderActive ? 29 : 23, -52);
   ctx.lineTo(11, -49);
   ctx.closePath();
   ctx.fill();
@@ -985,6 +1028,13 @@ function drawPlayer() {
   ctx.fill();
 
   if (riderActive) {
+    ctx.fillStyle = "#ffd66d";
+    ctx.beginPath();
+    ctx.moveTo(-5, -63);
+    ctx.lineTo(0, -78);
+    ctx.lineTo(5, -63);
+    ctx.closePath();
+    ctx.fill();
     ctx.fillStyle = "#68e5ff";
     ctx.beginPath();
     ctx.ellipse(-4, -49, 6, 3, -0.15, 0, Math.PI * 2);
