@@ -1498,6 +1498,125 @@ function drawVillain(v) {
     return;
   }
 
+  if (v.name === "\ud0a5\ubcf4\ub4dc\ud3ed\uc8fc\uc871") {
+    const lean = Math.sin(v.phase * 1.9) * 0.12;
+    const bob = Math.sin(v.phase * 2.6) * 2.5;
+    ctx.rotate(lean);
+
+    ctx.fillStyle = "rgba(0, 0, 0, 0.24)";
+    ctx.beginPath();
+    ctx.ellipse(0, 39, 36, 11, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.strokeStyle = "rgba(255,255,255,0.36)";
+    ctx.lineWidth = 3;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(-45, 18);
+    ctx.lineTo(-20, 25);
+    ctx.moveTo(-42, 32);
+    ctx.lineTo(-18, 36);
+    ctx.moveTo(42, 16);
+    ctx.lineTo(20, 24);
+    ctx.stroke();
+
+    ctx.strokeStyle = "#111827";
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.arc(-18, 32, 9, 0, Math.PI * 2);
+    ctx.arc(21, 32, 9, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.strokeStyle = "#334155";
+    ctx.lineWidth = 7;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(-25, 22);
+    ctx.lineTo(28, 22);
+    ctx.stroke();
+    ctx.strokeStyle = "#e5e7eb";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(-16, 18);
+    ctx.lineTo(23, 18);
+    ctx.stroke();
+
+    ctx.strokeStyle = "#111827";
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.moveTo(18, 20);
+    ctx.lineTo(10, -27 + bob);
+    ctx.moveTo(-16, -27 + bob);
+    ctx.lineTo(36, -27 + bob);
+    ctx.stroke();
+
+    ctx.strokeStyle = "#111827";
+    ctx.lineWidth = 5;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(-7, -4 + bob);
+    ctx.lineTo(-24, 14);
+    ctx.moveTo(8, 1 + bob);
+    ctx.lineTo(19, 18);
+    ctx.moveTo(-12, -17 + bob);
+    ctx.lineTo(-28, -24 + bob);
+    ctx.moveTo(12, -17 + bob);
+    ctx.lineTo(28, -25 + bob);
+    ctx.stroke();
+
+    ctx.fillStyle = v.hitFlash > 0 ? "#ffffff" : "#ffc857";
+    ctx.beginPath();
+    ctx.roundRect(-17, -26 + bob, 34, 33, 9);
+    ctx.fill();
+    ctx.fillStyle = "#ef4444";
+    ctx.beginPath();
+    ctx.moveTo(-15, -23 + bob);
+    ctx.lineTo(15, -23 + bob);
+    ctx.lineTo(4, -6 + bob);
+    ctx.lineTo(-6, -6 + bob);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = "#f4d5b5";
+    ctx.beginPath();
+    ctx.arc(0, -42 + bob, 12, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#0f172a";
+    ctx.beginPath();
+    ctx.ellipse(0, -52 + bob, 17, 10, 0, Math.PI, Math.PI * 2);
+    ctx.lineTo(15, -46 + bob);
+    ctx.quadraticCurveTo(0, -39 + bob, -15, -46 + bob);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = "#38bdf8";
+    ctx.beginPath();
+    ctx.roundRect(-13, -46 + bob, 26, 6, 3);
+    ctx.fill();
+    ctx.fillStyle = "#111827";
+    ctx.beginPath();
+    ctx.arc(-5, -42 + bob, 3, 0, Math.PI * 2);
+    ctx.arc(6, -42 + bob, 3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#111827";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(-7, -34 + bob);
+    ctx.quadraticCurveTo(0, -30 + bob, 8, -34 + bob);
+    ctx.stroke();
+
+    ctx.fillStyle = "#fb923c";
+    ctx.beginPath();
+    ctx.moveTo(27, 20);
+    ctx.lineTo(42, 25 + Math.sin(v.phase * 6) * 3);
+    ctx.lineTo(27, 30);
+    ctx.closePath();
+    ctx.fill();
+
+    drawVillainLabel(v, v.radius + 27, 900);
+    ctx.restore();
+    return;
+  }
+
   if (v.skid) {
     const skidLean = Math.sin(v.phase) * 0.28;
     ctx.rotate(skidLean);
