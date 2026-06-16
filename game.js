@@ -238,11 +238,11 @@ function ringBell() {
     x: game.player.x,
     y: game.player.y - 64,
     vx: game.player.tilt * 80,
-    vy: -720,
+    vy: -560,
     radius: 14,
     spin: 0,
     trail: [],
-    life: 1.18,
+    life: 1.35,
     age: 0,
   });
   burst(game.player.x, game.player.y - 58, "#ffc857", 8, 150);
