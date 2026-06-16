@@ -20,6 +20,7 @@ const hold = new Set();
 const CHARACTER_SCALE = 0.7;
 const BELL_COOLDOWN = 1.5;
 const MAX_BELLS = 50;
+const MAX_HEALTH = 200;
 const LEADERBOARD_KEY = "hangang-villain-rider-leaderboard";
 const MAX_LEADERBOARD = 10;
 const MAX_NAME_UNITS = 20;
@@ -583,7 +584,7 @@ function pickup(item) {
     game.comboText.push({ text: "\ubca8 +2", x: item.x, y: item.y - 28, age: 0, life: 0.8, color: "#fff0b3" });
     burst(item.x, item.y, "#ffc857", 12, 180);
   } else {
-    game.health = Math.min(100, game.health + 18);
+    game.health = Math.min(MAX_HEALTH, game.health + 18);
     game.comboText.push({ text: "\ud68c\ubcf5", x: item.x, y: item.y - 28, age: 0, life: 0.8, color: "#b9fbc0" });
     burst(item.x, item.y, "#31d6a4", 12, 180);
   }
