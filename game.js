@@ -92,6 +92,10 @@ const game = {
   nextBossAt: 5000,
   boss: null,
   bossProjectiles: [],
+  marathonTriggered: false,
+  marathonTimer: 0,
+  marathonSpawnTimer: 0,
+  marathonRunners: [],
   comboText: [],
   player: {
     x: 220,
@@ -132,6 +136,10 @@ function resetGame() {
   game.nextBossAt = 5000;
   game.boss = null;
   game.bossProjectiles = [];
+  game.marathonTriggered = false;
+  game.marathonTimer = 0;
+  game.marathonSpawnTimer = 0;
+  game.marathonRunners = [];
   game.comboText = [];
   game.villains = [];
   game.blasts = [];
@@ -269,6 +277,51 @@ function startBoss() {
     life: 1.3,
     color: "#ffd66d",
   });
+}
+
+function startMarathonLegion() {
+  const road = roadBounds();
+  game.marathonTriggered = true;
+  game.marathonTimer = 11;
+  game.marathonSpawnTimer = 0;
+  game.marathonRunners = [];
+  game.villains = [];
+  game.items = [];
+  game.bossProjectiles = [];
+  game.health = Math.max(game.health, 70);
+  game.bells = Math.max(game.bells, 10);
+  game.invincible = Math.max(game.invincible, 2.2);
+
+  for (let row = 0; row < 7; row += 1) {
+    spawnMarathonWave(-row * 96 - 40, row % 2 === 0 ? 0 : 1);
+  }
+
+  game.comboText.push({
+    text: "\ub9c8\ub77c\ud1a4 \uad70\ub2e8!",
+    x: (road.left + road.right) / 2,
+    y: canvas.clientHeight * 0.32,
+    age: 0,
+    life: 1.5,
+    color: "#ffb4b4",
+  });
+}
+
+function spawnMarathonWave(y, offsetSeed) {
+  const road = roadBounds();
+  const lanes = 5;
+  const gap = road.width / lanes;
+  for (let i = 0; i < lanes; i += 1) {
+    if ((i + offsetSeed) % 5 === 3 && Math.random() < 0.35) continue;
+    game.marathonRunners.push({
+      x: road.left + gap * (i + 0.5) + rand(-10, 10),
+      y: y + rand(-12, 12),
+      radius: 22,
+      speed: rand(185, 250),
+      phase: rand(0, Math.PI * 2),
+      color: i % 2 === 0 ? "#ef4444" : "#2563eb",
+      dead: false,
+    });
+  }
 }
 
 function ringBell() {
@@ -429,10 +482,52 @@ function updateBoss(dt, playerPowered) {
   }
 }
 
+function updateMarathonLegion(dt, playerPowered) {
+  game.marathonTimer = Math.max(0, game.marathonTimer - dt);
+  game.marathonSpawnTimer -= dt;
+
+  if (game.marathonSpawnTimer <= 0 && game.marathonTimer > 0) {
+    spawnMarathonWave(-58, Math.floor(game.time * 3));
+    game.marathonSpawnTimer = 0.42;
+  }
+
+  for (const runner of game.marathonRunners) {
+    runner.phase += dt * 9;
+    runner.y += runner.speed * dt;
+    runner.x += Math.sin(runner.phase) * 16 * dt;
+
+    if (!runner.dead && circleHit(game.player, runner)) {
+      if (playerPowered) {
+        runner.dead = true;
+        game.score += 45;
+        burst(runner.x, runner.y, "#68e5ff", 10, 180);
+      } else {
+        runner.y += 34;
+        damagePlayer(24, runner.x, runner.y);
+      }
+    }
+  }
+
+  if (game.marathonTimer <= 0) {
+    game.marathonRunners = [];
+    game.invincible = Math.max(game.invincible, 0.8);
+    game.comboText.push({
+      text: "\ub9c8\ub77c\ud1a4 \uad70\ub2e8 \ud1b5\uacfc!",
+      x: canvas.clientWidth / 2,
+      y: canvas.clientHeight * 0.32,
+      age: 0,
+      life: 1.2,
+      color: "#dffcff",
+    });
+  }
+}
+
 function update(dt) {
   if (!game.running || game.paused || game.over) return;
 
-  if (!game.boss && game.score >= game.nextBossAt) startBoss();
+  if (!game.marathonTriggered && !game.boss && game.score >= 10000) startMarathonLegion();
+  const marathonActive = game.marathonTimer > 0;
+  if (!marathonActive && !game.boss && game.score >= game.nextBossAt) startBoss();
   const bossActive = Boolean(game.boss);
   const riderActive = game.riderTimer > 0;
   const transformActive = game.transformTimer > 0;
@@ -440,9 +535,9 @@ function update(dt) {
   game.riderTimer = Math.max(0, game.riderTimer - dt);
   game.riderFlash = Math.max(0, game.riderFlash - dt);
   game.time += dt;
-  game.score += bossActive ? 0 : dt * (22 + game.time * 0.65) * (riderActive ? 2.6 : 1);
+  game.score += bossActive || marathonActive ? 0 : dt * (22 + game.time * 0.65) * (riderActive ? 2.6 : 1);
   const distanceSpeed = game.score / 250;
-  game.speed = (bossActive ? 170 + game.boss.level * 10 : 280 + Math.min(170, Math.max(0, game.time - 6) * 6.0) + distanceSpeed) + (riderActive ? 210 : 0);
+  game.speed = (bossActive ? 170 + game.boss.level * 10 : marathonActive ? 230 : 280 + Math.min(170, Math.max(0, game.time - 6) * 6.0) + distanceSpeed) + (riderActive ? 210 : 0);
   game.invincible = riderActive ? Math.max(game.invincible, 0.2) : Math.max(0, game.invincible - dt);
 
   const road = roadBounds();
@@ -458,16 +553,20 @@ function update(dt) {
   player.y = clamp(player.y + (vy / len) * (riderActive ? 430 : 360) * dt, canvas.clientHeight * 0.45, road.bottom - player.radius - 18);
   player.tilt += (vx * 0.34 - player.tilt) * Math.min(1, dt * 10);
 
+  if (marathonActive) {
+    updateMarathonLegion(dt, riderActive || transformActive);
+  }
+
   game.spawnTimer -= dt;
-  if (!bossActive && game.spawnTimer <= 0) {
+  if (!bossActive && !marathonActive && game.spawnTimer <= 0) {
     spawnVillain();
     game.spawnTimer = rand(0.82, 1.38) * Math.max(0.62, 1 - game.time / 105);
   }
 
   game.itemTimer -= dt;
   if (game.itemTimer <= 0) {
-    spawnItem(bossActive ? "bell" : undefined);
-    game.itemTimer = bossActive ? rand(2.4, 3.4) : rand(4.4, 7.2);
+    spawnItem(bossActive || marathonActive ? "bell" : undefined);
+    game.itemTimer = bossActive || marathonActive ? rand(2.0, 2.8) : rand(4.4, 7.2);
   }
 
   if (game.boss) {
@@ -569,6 +668,7 @@ function update(dt) {
   game.items = game.items.filter((i) => !i.dead && i.y < h + 70);
   game.blasts = game.blasts.filter((b) => !b.dead && b.age < b.life && b.y > -80);
   game.bossProjectiles = game.bossProjectiles.filter((p) => !p.dead && p.y < h + 80);
+  game.marathonRunners = game.marathonRunners.filter((r) => !r.dead && r.y < h + 90);
   game.particles = game.particles.filter((p) => p.age < p.life);
   game.comboText = game.comboText.filter((t) => t.age < t.life);
 
@@ -1000,6 +1100,64 @@ function drawBossProjectile(projectile) {
   ctx.restore();
 }
 
+function drawMarathonRunner(runner) {
+  ctx.save();
+  ctx.translate(runner.x, runner.y);
+  const step = Math.sin(runner.phase) * 5;
+  ctx.globalAlpha = runner.dead ? 0.35 : 1;
+
+  ctx.strokeStyle = "#111827";
+  ctx.lineWidth = 5;
+  ctx.beginPath();
+  ctx.moveTo(-10, 24);
+  ctx.lineTo(-18, 40 + step);
+  ctx.moveTo(10, 24);
+  ctx.lineTo(18, 40 - step);
+  ctx.moveTo(-14, 4);
+  ctx.lineTo(-26, 17 - step);
+  ctx.moveTo(14, 4);
+  ctx.lineTo(26, 17 + step);
+  ctx.stroke();
+
+  ctx.fillStyle = runner.color;
+  ctx.beginPath();
+  ctx.roundRect(-17, -10, 34, 38, 9);
+  ctx.fill();
+  ctx.fillStyle = "#f4d5b5";
+  ctx.beginPath();
+  ctx.arc(0, -25, 13, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#111827";
+  ctx.fillRect(-9, -34, 18, 8);
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "900 10px Malgun Gothic, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("RUN", 0, 7);
+  ctx.restore();
+}
+
+function drawMarathonOverlay(w) {
+  if (game.marathonTimer <= 0) return;
+  const road = roadBounds();
+  const barW = road.width * 0.72;
+  const x = road.left + (road.width - barW) / 2;
+  const y = 78;
+  ctx.save();
+  ctx.fillStyle = "rgba(10, 8, 12, 0.78)";
+  ctx.beginPath();
+  ctx.roundRect(x, y, barW, 16, 9);
+  ctx.fill();
+  ctx.fillStyle = "#ef4444";
+  ctx.beginPath();
+  ctx.roundRect(x, y, barW * (game.marathonTimer / 11), 16, 9);
+  ctx.fill();
+  ctx.font = "900 14px Malgun Gothic, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillStyle = "#fff4d6";
+  ctx.fillText(`\ub9c8\ub77c\ud1a4 \uad70\ub2e8 ${Math.ceil(game.marathonTimer)}s`, w / 2, y - 8);
+  ctx.restore();
+}
+
 function drawVillain(v) {
   ctx.save();
   ctx.translate(v.x, v.y);
@@ -1144,12 +1302,14 @@ function draw() {
   for (const item of game.items) drawItem(item);
   for (const blast of game.blasts) drawBlast(blast);
   for (const villain of game.villains) drawVillain(villain);
+  for (const runner of game.marathonRunners) drawMarathonRunner(runner);
   drawBoss();
   for (const projectile of game.bossProjectiles) drawBossProjectile(projectile);
   drawPlayer();
   drawParticles();
   drawFloatingText();
   drawRiderTimer(w, h);
+  drawMarathonOverlay(w);
   drawTransformScene(w, h);
 
   if (!game.running) {
