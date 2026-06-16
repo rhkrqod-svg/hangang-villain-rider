@@ -88,6 +88,9 @@ const game = {
   transformTimer: 0,
   riderTimer: 0,
   riderFlash: 0,
+  bossDefeated: false,
+  boss: null,
+  bossProjectiles: [],
   comboText: [],
   player: {
     x: 220,
@@ -124,6 +127,9 @@ function resetGame() {
   game.transformTimer = 0;
   game.riderTimer = 0;
   game.riderFlash = 0;
+  game.bossDefeated = false;
+  game.boss = null;
+  game.bossProjectiles = [];
   game.comboText = [];
   game.villains = [];
   game.blasts = [];
@@ -217,9 +223,9 @@ function spawnVillain() {
   });
 }
 
-function spawnItem() {
+function spawnItem(kindOverride) {
   const road = roadBounds();
-  const kind = Math.random() > 0.44 ? "bell" : "water";
+  const kind = kindOverride || (Math.random() > 0.44 ? "bell" : "water");
   const x = rand(road.left + 36, road.right - 36);
   game.items.push({
     kind,
@@ -228,6 +234,34 @@ function spawnItem() {
     radius: 21,
     speed: game.speed * 0.82,
     phase: rand(0, Math.PI * 2),
+  });
+}
+
+function startBoss() {
+  const road = roadBounds();
+  game.boss = {
+    x: (road.left + road.right) / 2,
+    y: -110,
+    targetY: canvas.clientHeight * 0.2,
+    radius: 66,
+    hp: 3,
+    maxHp: 3,
+    fireTimer: 1.6,
+    phase: 0,
+    hurt: 0,
+  };
+  game.villains = [];
+  game.items = [];
+  game.bossProjectiles = [];
+  game.health = Math.max(game.health, 50);
+  game.invincible = Math.max(game.invincible, 1.4);
+  game.comboText.push({
+    text: "\ubcf4\uc2a4 \ub4f1\uc7a5!",
+    x: game.boss.x,
+    y: canvas.clientHeight * 0.28,
+    age: 0,
+    life: 1.3,
+    color: "#ffd66d",
   });
 }
 
@@ -316,6 +350,24 @@ function defeatVillain(villain, reason) {
   villain.dead = true;
 }
 
+function defeatBoss() {
+  if (!game.boss) return;
+  burst(game.boss.x, game.boss.y, "#ffd66d", 42, 420);
+  burst(game.boss.x, game.boss.y + 20, "#68e5ff", 36, 360);
+  game.comboText.push({
+    text: "4\ub95c \uc790\uc804\uac70 \ud1f4\uce58!",
+    x: game.boss.x,
+    y: game.boss.y - 72,
+    age: 0,
+    life: 1.4,
+    color: "#fff0b3",
+  });
+  game.score += 1000;
+  game.bossDefeated = true;
+  game.boss = null;
+  game.bossProjectiles = [];
+}
+
 function pickup(item) {
   if (item.kind === "bell") {
     game.bells = Math.min(20, game.bells + 2);
@@ -330,17 +382,57 @@ function pickup(item) {
   updateHud();
 }
 
+function updateBoss(dt, playerPowered) {
+  const boss = game.boss;
+  if (!boss) return;
+
+  const road = roadBounds();
+  boss.phase += dt;
+  boss.hurt = Math.max(0, boss.hurt - dt);
+  boss.x = (road.left + road.right) / 2 + Math.sin(boss.phase * 1.7) * road.width * 0.12;
+  boss.y += (boss.targetY - boss.y) * Math.min(1, dt * 2.8);
+  boss.fireTimer -= dt;
+
+  if (boss.fireTimer <= 0) {
+    const count = boss.hp === 1 ? 3 : 2;
+    for (let i = 0; i < count; i += 1) {
+      game.bossProjectiles.push({
+        x: boss.x + (i - (count - 1) / 2) * 42,
+        y: boss.y + 62,
+        vx: rand(-26, 26),
+        vy: rand(225, 285),
+        radius: 22,
+        rotation: rand(-0.4, 0.4),
+        phase: rand(0, Math.PI * 2),
+        age: 0,
+      });
+    }
+    burst(boss.x, boss.y + 38, playerPowered ? "#68e5ff" : "#ff7a59", 10, 120);
+    game.comboText.push({
+      text: "\uae54\uae54\uae54!",
+      x: boss.x,
+      y: boss.y + 104,
+      age: 0,
+      life: 0.72,
+      color: "#ffd66d",
+    });
+    boss.fireTimer = boss.hp === 1 ? rand(0.95, 1.25) : rand(1.25, 1.7);
+  }
+}
+
 function update(dt) {
   if (!game.running || game.paused || game.over) return;
 
+  if (!game.boss && !game.bossDefeated && game.score >= 5000) startBoss();
+  const bossActive = Boolean(game.boss);
   const riderActive = game.riderTimer > 0;
   const transformActive = game.transformTimer > 0;
   game.transformTimer = Math.max(0, game.transformTimer - dt);
   game.riderTimer = Math.max(0, game.riderTimer - dt);
   game.riderFlash = Math.max(0, game.riderFlash - dt);
   game.time += dt;
-  game.score += dt * (22 + game.time * 0.65) * (riderActive ? 2.6 : 1);
-  game.speed = 280 + Math.min(170, Math.max(0, game.time - 6) * 6.0) + (riderActive ? 210 : 0);
+  game.score += bossActive ? 0 : dt * (22 + game.time * 0.65) * (riderActive ? 2.6 : 1);
+  game.speed = (bossActive ? 170 : 280 + Math.min(170, Math.max(0, game.time - 6) * 6.0)) + (riderActive ? 210 : 0);
   game.invincible = riderActive ? Math.max(game.invincible, 0.2) : Math.max(0, game.invincible - dt);
 
   const road = roadBounds();
@@ -357,15 +449,19 @@ function update(dt) {
   player.tilt += (vx * 0.34 - player.tilt) * Math.min(1, dt * 10);
 
   game.spawnTimer -= dt;
-  if (game.spawnTimer <= 0) {
+  if (!bossActive && game.spawnTimer <= 0) {
     spawnVillain();
     game.spawnTimer = rand(0.82, 1.38) * Math.max(0.62, 1 - game.time / 105);
   }
 
   game.itemTimer -= dt;
   if (game.itemTimer <= 0) {
-    spawnItem();
-    game.itemTimer = rand(4.4, 7.2);
+    spawnItem(bossActive ? "bell" : undefined);
+    game.itemTimer = bossActive ? rand(2.4, 3.4) : rand(4.4, 7.2);
+  }
+
+  if (game.boss) {
+    updateBoss(dt, riderActive || transformActive);
   }
 
   for (const villain of game.villains) {
@@ -399,6 +495,25 @@ function update(dt) {
     blast.trail.push({ x: blast.x, y: blast.y, age: 0 });
     for (const point of blast.trail) point.age += dt;
     blast.trail = blast.trail.filter((point) => point.age < 0.22);
+    if (game.boss && !blast.dead) {
+      const dx = game.boss.x - blast.x;
+      const dy = game.boss.y - blast.y;
+      if (Math.hypot(dx, dy) < blast.radius + game.boss.radius) {
+        blast.dead = true;
+        game.boss.hp -= 1;
+        game.boss.hurt = 0.22;
+        burst(blast.x, blast.y, "#ffc857", 20, 240);
+        game.comboText.push({
+          text: "\ubcf4\uc2a4 \uba85\uc911!",
+          x: game.boss.x,
+          y: game.boss.y - 84,
+          age: 0,
+          life: 0.9,
+          color: "#fff0b3",
+        });
+        if (game.boss.hp <= 0) defeatBoss();
+      }
+    }
     for (const villain of game.villains) {
       if (villain.dead) continue;
       const dx = villain.x - blast.x;
@@ -409,6 +524,22 @@ function update(dt) {
         blast.dead = true;
         defeatVillain(villain, "\uba85\uc911!");
         break;
+      }
+    }
+  }
+
+  for (const projectile of game.bossProjectiles) {
+    projectile.age += dt;
+    projectile.y += projectile.vy * dt;
+    projectile.x += Math.sin(projectile.age * 9 + projectile.phase) * 24 * dt;
+    projectile.rotation += dt * 5;
+    if (circleHit(player, projectile)) {
+      if (riderActive || transformActive) {
+        projectile.dead = true;
+        burst(projectile.x, projectile.y, "#68e5ff", 12, 180);
+      } else {
+        projectile.dead = true;
+        damagePlayer(18, projectile.x, projectile.y);
       }
     }
   }
@@ -427,6 +558,7 @@ function update(dt) {
   game.villains = game.villains.filter((v) => !v.dead && v.y < h + 110);
   game.items = game.items.filter((i) => !i.dead && i.y < h + 70);
   game.blasts = game.blasts.filter((b) => !b.dead && b.age < b.life && b.y > -80);
+  game.bossProjectiles = game.bossProjectiles.filter((p) => !p.dead && p.y < h + 80);
   game.particles = game.particles.filter((p) => p.age < p.life);
   game.comboText = game.comboText.filter((t) => t.age < t.life);
 
@@ -747,6 +879,117 @@ function drawTransformScene(w, h) {
   ctx.restore();
 }
 
+function drawBoss() {
+  if (!game.boss) return;
+  const b = game.boss;
+  ctx.save();
+  ctx.translate(b.x, b.y);
+  ctx.globalAlpha = b.hurt > 0 && Math.floor(game.time * 28) % 2 === 0 ? 0.55 : 1;
+
+  ctx.fillStyle = "rgba(0, 0, 0, 0.24)";
+  ctx.beginPath();
+  ctx.ellipse(0, 66, 76, 18, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = "#f59e0b";
+  ctx.beginPath();
+  ctx.roundRect(-68, -18, 136, 58, 12);
+  ctx.fill();
+  ctx.fillStyle = "#facc15";
+  ctx.beginPath();
+  ctx.roundRect(-58, -52, 116, 42, 14);
+  ctx.fill();
+  ctx.fillStyle = "#7c2d12";
+  ctx.fillRect(-54, -3, 108, 22);
+
+  ctx.fillStyle = "#111827";
+  for (const wheel of [
+    [-52, 42],
+    [-18, 47],
+    [18, 47],
+    [52, 42],
+  ]) {
+    ctx.beginPath();
+    ctx.arc(wheel[0], wheel[1], 13, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#d1d5db";
+    ctx.lineWidth = 3;
+    ctx.stroke();
+  }
+
+  ctx.fillStyle = "#fef3c7";
+  ctx.beginPath();
+  ctx.arc(-24, -6, 12, 0, Math.PI * 2);
+  ctx.arc(24, -6, 12, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#111827";
+  ctx.beginPath();
+  ctx.arc(-29, -9, 3, 0, Math.PI * 2);
+  ctx.arc(19, -9, 3, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = "#111827";
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.arc(0, 8, 20, 0.18 * Math.PI, 0.82 * Math.PI);
+  ctx.stroke();
+
+  ctx.font = "900 12px Malgun Gothic, sans-serif";
+  ctx.fillStyle = "#ffffff";
+  ctx.textAlign = "center";
+  ctx.fillText("4\ub95c \uc790\uc804\uac70", 0, 72);
+  ctx.restore();
+
+  drawBossHealth();
+}
+
+function drawBossHealth() {
+  if (!game.boss) return;
+  const road = roadBounds();
+  const w = road.width * 0.72;
+  const x = road.left + (road.width - w) / 2;
+  const y = 52;
+  ctx.save();
+  ctx.fillStyle = "rgba(6, 12, 16, 0.72)";
+  ctx.beginPath();
+  ctx.roundRect(x, y, w, 15, 9);
+  ctx.fill();
+  ctx.fillStyle = "#ff5c5c";
+  ctx.beginPath();
+  ctx.roundRect(x, y, w * (game.boss.hp / game.boss.maxHp), 15, 9);
+  ctx.fill();
+  ctx.font = "900 13px Malgun Gothic, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillStyle = "#fff4d6";
+  ctx.fillText("\ubcf4\uc2a4: \ud55c\uac15 4\ub95c \uc790\uc804\uac70", x + w / 2, y - 7);
+  ctx.restore();
+}
+
+function drawBossProjectile(projectile) {
+  ctx.save();
+  ctx.translate(projectile.x, projectile.y);
+  ctx.rotate(projectile.rotation + Math.sin(projectile.age * 8) * 0.12);
+  ctx.fillStyle = "#fff7ed";
+  ctx.beginPath();
+  ctx.roundRect(-34, -16, 68, 32, 14);
+  ctx.fill();
+  ctx.fillStyle = "#fb923c";
+  ctx.beginPath();
+  ctx.moveTo(-10, 13);
+  ctx.lineTo(-2, 30);
+  ctx.lineTo(10, 13);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = "#7c2d12";
+  ctx.lineWidth = 3;
+  ctx.strokeRect(-26, -10, 52, 20);
+  ctx.font = "900 11px Malgun Gothic, sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillStyle = "#7c2d12";
+  ctx.fillText("\uae54\uae54!", 0, 1);
+  ctx.restore();
+}
+
 function drawVillain(v) {
   ctx.save();
   ctx.translate(v.x, v.y);
@@ -891,6 +1134,8 @@ function draw() {
   for (const item of game.items) drawItem(item);
   for (const blast of game.blasts) drawBlast(blast);
   for (const villain of game.villains) drawVillain(villain);
+  drawBoss();
+  for (const projectile of game.bossProjectiles) drawBossProjectile(projectile);
   drawPlayer();
   drawParticles();
   drawFloatingText();
