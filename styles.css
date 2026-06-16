@@ -47,9 +47,9 @@ button {
 
 .game-shell {
   position: relative;
-  width: min(100vw, 1380px);
-  height: min(100vh, 820px);
-  min-height: 520px;
+  width: min(100vw, 480px);
+  height: 100vh;
+  min-height: 620px;
   display: grid;
   grid-template-rows: auto 1fr auto;
   background: #0b1518;
@@ -129,12 +129,12 @@ button {
 .touch-controls {
   z-index: 4;
   display: grid;
-  grid-template-columns: 132px 72px;
+  grid-template-columns: 184px 88px;
   justify-content: space-between;
   align-items: center;
-  gap: 18px;
-  min-height: 104px;
-  padding: 12px clamp(14px, 4vw, 28px) 16px;
+  gap: 20px;
+  min-height: 134px;
+  padding: 14px clamp(16px, 4vw, 28px) 18px;
   background: var(--panel);
   border-top: 1px solid var(--line);
   backdrop-filter: blur(12px);
@@ -142,16 +142,16 @@ button {
 
 .dpad {
   display: grid;
-  grid-template-columns: repeat(3, 42px);
-  grid-template-rows: repeat(2, 42px);
-  gap: 6px;
+  grid-template-columns: repeat(3, 56px);
+  grid-template-rows: repeat(2, 56px);
+  gap: 8px;
 }
 
 .dpad button {
-  width: 42px;
-  height: 42px;
+  width: 56px;
+  height: 56px;
   border-radius: 8px;
-  font-size: 16px;
+  font-size: 25px;
   font-weight: 900;
 }
 
@@ -175,17 +175,17 @@ button {
 }
 
 .bell-button {
-  width: 72px;
-  height: 72px;
+  width: 88px;
+  height: 88px;
   border-radius: 8px;
   background: rgba(255, 200, 87, 0.22);
   color: #fff4d6;
-  font-size: 31px;
+  font-size: 40px;
 }
 
 .overlay {
   position: absolute;
-  inset: 64px 0 104px;
+  inset: 64px 0 134px;
   z-index: 5;
   display: grid;
   place-items: center;
@@ -231,7 +231,7 @@ button {
 
 @media (min-width: 820px) {
   .touch-controls {
-    grid-template-columns: 132px 72px;
+    grid-template-columns: 184px 88px;
   }
 }
 
@@ -253,28 +253,29 @@ button {
   }
 
   .touch-controls {
-    min-height: 100px;
-    grid-template-columns: 120px 66px;
+    min-height: 132px;
+    grid-template-columns: 174px 84px;
     padding-inline: 12px;
   }
 
   .dpad {
-    grid-template-columns: repeat(3, 38px);
-    grid-template-rows: repeat(2, 38px);
-    gap: 5px;
+    grid-template-columns: repeat(3, 52px);
+    grid-template-rows: repeat(2, 52px);
+    gap: 7px;
   }
 
   .dpad button {
-    width: 38px;
-    height: 38px;
+    width: 52px;
+    height: 52px;
+    font-size: 24px;
   }
 
   .bell-button {
-    width: 66px;
-    height: 66px;
+    width: 84px;
+    height: 84px;
   }
 
   .overlay {
-    inset: 58px 0 100px;
+    inset: 58px 0 132px;
   }
 }

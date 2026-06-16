@@ -14,11 +14,11 @@ const keys = new Set();
 const hold = new Set();
 
 const villainTypes = [
-  { name: "역주행러", color: "#ff5c5c", hp: 1, radius: 25, wobble: 0.8, score: 80 },
-  { name: "킥보드폭주족", color: "#ffc857", hp: 1, radius: 22, wobble: 1.3, score: 95 },
-  { name: "셀카봉러", color: "#a78bfa", hp: 1, radius: 24, wobble: 0.45, score: 75 },
-  { name: "길막수다단", color: "#f97316", hp: 2, radius: 31, wobble: 0.35, score: 140 },
-  { name: "돗자리확장러", color: "#38bdf8", hp: 2, radius: 34, wobble: 0.2, score: 150 },
+  { name: "\uc5ed\uc8fc\ud589\ub7ec", color: "#ff5c5c", hp: 1, radius: 25, wobble: 0.8, score: 80 },
+  { name: "\ud0a5\ubcf4\ub4dc\ud3ed\uc8fc\uc871", color: "#ffc857", hp: 1, radius: 22, wobble: 1.3, score: 95 },
+  { name: "\uc140\uce74\ubd09\ub7ec", color: "#a78bfa", hp: 1, radius: 24, wobble: 0.45, score: 75 },
+  { name: "\uae38\ub9c9\uc218\ub2e4\ub2e8", color: "#f97316", hp: 2, radius: 31, wobble: 0.35, score: 140 },
+  { name: "\ub3d7\uc790\ub9ac\ud655\uc7a5\ub7ec", color: "#38bdf8", hp: 2, radius: 34, wobble: 0.2, score: 150 },
 ];
 
 const game = {
@@ -29,14 +29,14 @@ const game = {
   score: 0,
   health: 100,
   bells: 3,
-  speed: 310,
+  speed: 280,
   spawnTimer: 0,
   itemTimer: 2.5,
   invincible: 0,
   comboText: [],
   player: {
-    x: 250,
-    y: 360,
+    x: 220,
+    y: 620,
     radius: 25,
     tilt: 0,
   },
@@ -62,21 +62,21 @@ function resetGame() {
   game.score = 0;
   game.health = 100;
   game.bells = 3;
-  game.speed = 310;
-  game.spawnTimer = 1.35;
-  game.itemTimer = 3.2;
+  game.speed = 280;
+  game.spawnTimer = 1.2;
+  game.itemTimer = 3.1;
   game.invincible = 0;
   game.comboText = [];
   game.villains = [];
   game.blasts = [];
   game.items = [];
   game.particles = [];
-  const w = canvas.clientWidth;
-  const h = canvas.clientHeight;
-  game.player.x = Math.max(126, w * 0.22);
-  game.player.y = h * 0.56;
+
+  const road = roadBounds();
+  game.player.x = (road.left + road.right) / 2;
+  game.player.y = road.bottom - 82;
   overlay.hidden = true;
-  pauseBtn.textContent = "Ⅱ";
+  pauseBtn.textContent = "II";
   updateHud();
 }
 
@@ -94,40 +94,48 @@ function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
 
-function laneBounds() {
+function roadBounds() {
+  const w = canvas.clientWidth;
   const h = canvas.clientHeight;
+  const roadWidth = Math.min(w * 0.82, 390);
+  const left = (w - roadWidth) / 2;
+  const right = left + roadWidth;
   return {
-    top: h * 0.24,
-    bottom: h * 0.88,
+    left,
+    right,
+    top: Math.max(0, h * 0.02),
+    bottom: h,
+    width: roadWidth,
   };
 }
 
 function spawnVillain() {
-  const bounds = laneBounds();
+  const road = roadBounds();
   const type = villainTypes[Math.floor(Math.random() * villainTypes.length)];
-  const extraSpeed = Math.min(165, Math.max(0, game.time - 8) * 4.9);
+  const extraSpeed = Math.min(150, Math.max(0, game.time - 8) * 4.6);
+  const x = rand(road.left + type.radius + 18, road.right - type.radius - 18);
   game.villains.push({
     ...type,
-    x: canvas.clientWidth + type.radius + rand(20, 140),
-    y: rand(bounds.top + type.radius, bounds.bottom - type.radius),
+    x,
+    y: -type.radius - rand(20, 120),
     hp: type.hp,
-    baseY: 0,
+    baseX: x,
     phase: rand(0, Math.PI * 2),
-    speed: game.speed + extraSpeed + rand(-18, 58),
+    speed: game.speed + extraSpeed + rand(-16, 52),
     hitFlash: 0,
   });
-  game.villains[game.villains.length - 1].baseY = game.villains[game.villains.length - 1].y;
 }
 
 function spawnItem() {
-  const bounds = laneBounds();
+  const road = roadBounds();
   const kind = Math.random() > 0.44 ? "bell" : "water";
+  const x = rand(road.left + 36, road.right - 36);
   game.items.push({
     kind,
-    x: canvas.clientWidth + 38,
-    y: rand(bounds.top + 36, bounds.bottom - 36),
-    radius: 20,
-    speed: game.speed * 0.86,
+    x,
+    y: -42,
+    radius: 21,
+    speed: game.speed * 0.82,
     phase: rand(0, Math.PI * 2),
   });
 }
@@ -136,14 +144,14 @@ function ringBell() {
   if (!game.running || game.paused || game.over || game.bells <= 0) return;
   game.bells -= 1;
   game.blasts.push({
-    x: game.player.x + 22,
-    y: game.player.y,
+    x: game.player.x,
+    y: game.player.y - 24,
     radius: 18,
-    maxRadius: 170,
+    maxRadius: 164,
     life: 0.36,
     age: 0,
   });
-  burst(game.player.x + 32, game.player.y, "#ffc857", 14, 220);
+  burst(game.player.x, game.player.y - 28, "#ffc857", 14, 220);
   updateHud();
 }
 
@@ -176,7 +184,7 @@ function damagePlayer(amount, x, y) {
   game.health -= amount;
   game.invincible = 0.85;
   burst(x, y, "#ff5c5c", 18, 260);
-  game.comboText.push({ text: "충돌!", x, y: y - 28, age: 0, life: 0.7, color: "#ffb4b4" });
+  game.comboText.push({ text: "\ucda9\ub3cc!", x, y: y - 28, age: 0, life: 0.7, color: "#ffb4b4" });
   if (game.health <= 0) endGame();
 }
 
@@ -184,7 +192,7 @@ function defeatVillain(villain, reason) {
   game.score += villain.score;
   burst(villain.x, villain.y, "#31d6a4", 20, 270);
   game.comboText.push({
-    text: reason || "퇴치!",
+    text: reason || "\ud1f4\uce58!",
     x: villain.x,
     y: villain.y - 34,
     age: 0,
@@ -197,11 +205,11 @@ function defeatVillain(villain, reason) {
 function pickup(item) {
   if (item.kind === "bell") {
     game.bells = Math.min(9, game.bells + 2);
-    game.comboText.push({ text: "벨 +2", x: item.x, y: item.y - 28, age: 0, life: 0.8, color: "#fff0b3" });
+    game.comboText.push({ text: "\ubca8 +2", x: item.x, y: item.y - 28, age: 0, life: 0.8, color: "#fff0b3" });
     burst(item.x, item.y, "#ffc857", 12, 180);
   } else {
     game.health = Math.min(100, game.health + 18);
-    game.comboText.push({ text: "회복", x: item.x, y: item.y - 28, age: 0, life: 0.8, color: "#b9fbc0" });
+    game.comboText.push({ text: "\ud68c\ubcf5", x: item.x, y: item.y - 28, age: 0, life: 0.8, color: "#b9fbc0" });
     burst(item.x, item.y, "#31d6a4", 12, 180);
   }
   item.dead = true;
@@ -213,10 +221,10 @@ function update(dt) {
 
   game.time += dt;
   game.score += dt * (22 + game.time * 0.65);
-  game.speed = 305 + Math.min(175, Math.max(0, game.time - 6) * 6.2);
+  game.speed = 280 + Math.min(170, Math.max(0, game.time - 6) * 6.0);
   game.invincible = Math.max(0, game.invincible - dt);
 
-  const bounds = laneBounds();
+  const road = roadBounds();
   const player = game.player;
   let vx = 0;
   let vy = 0;
@@ -225,38 +233,38 @@ function update(dt) {
   if (keys.has("ArrowLeft") || keys.has("KeyA") || hold.has("left")) vx -= 1;
   if (keys.has("ArrowRight") || keys.has("KeyD") || hold.has("right")) vx += 1;
   const len = Math.hypot(vx, vy) || 1;
-  player.x = clamp(player.x + (vx / len) * 420 * dt, 66, canvas.clientWidth * 0.54);
-  player.y = clamp(player.y + (vy / len) * 420 * dt, bounds.top + player.radius, bounds.bottom - player.radius);
-  player.tilt += ((vy * 0.28) - player.tilt) * Math.min(1, dt * 10);
+  player.x = clamp(player.x + (vx / len) * 390 * dt, road.left + player.radius + 8, road.right - player.radius - 8);
+  player.y = clamp(player.y + (vy / len) * 360 * dt, canvas.clientHeight * 0.45, road.bottom - player.radius - 18);
+  player.tilt += (vx * 0.34 - player.tilt) * Math.min(1, dt * 10);
 
   game.spawnTimer -= dt;
   if (game.spawnTimer <= 0) {
     spawnVillain();
-    game.spawnTimer = rand(0.86, 1.42) * Math.max(0.62, 1 - game.time / 105);
+    game.spawnTimer = rand(0.82, 1.38) * Math.max(0.62, 1 - game.time / 105);
   }
 
   game.itemTimer -= dt;
   if (game.itemTimer <= 0) {
     spawnItem();
-    game.itemTimer = rand(4.6, 7.4);
+    game.itemTimer = rand(4.4, 7.2);
   }
 
   for (const villain of game.villains) {
-    villain.x -= villain.speed * dt;
+    villain.y += villain.speed * dt;
     villain.phase += dt * 3.2;
-    villain.y = villain.baseY + Math.sin(villain.phase) * villain.radius * villain.wobble;
+    villain.x = villain.baseX + Math.sin(villain.phase) * villain.radius * villain.wobble;
     villain.hitFlash = Math.max(0, villain.hitFlash - dt);
     if (circleHit(player, villain)) {
       damagePlayer(villain.hp === 2 ? 17 : 11, villain.x, villain.y);
-      villain.x -= 80;
-      villain.baseY += villain.y > player.y ? 28 : -28;
+      villain.y += 72;
+      villain.baseX += villain.x > player.x ? 20 : -20;
     }
   }
 
   for (const item of game.items) {
-    item.x -= item.speed * dt;
+    item.y += item.speed * dt;
     item.phase += dt * 4;
-    item.y += Math.sin(item.phase) * 0.28;
+    item.x += Math.sin(item.phase) * 0.28;
     if (circleHit(player, item)) pickup(item);
   }
 
@@ -270,8 +278,8 @@ function update(dt) {
       if (Math.hypot(dx, dy) < blast.radius + villain.radius) {
         villain.hp -= 1;
         villain.hitFlash = 0.12;
-        villain.x += 72;
-        if (villain.hp <= 0) defeatVillain(villain, "퇴치!");
+        villain.y -= 78;
+        if (villain.hp <= 0) defeatVillain(villain, "\ud1f4\uce58!");
       }
     }
   }
@@ -286,8 +294,9 @@ function update(dt) {
 
   for (const text of game.comboText) text.age += dt;
 
-  game.villains = game.villains.filter((v) => !v.dead && v.x > -90);
-  game.items = game.items.filter((i) => !i.dead && i.x > -60);
+  const h = canvas.clientHeight;
+  game.villains = game.villains.filter((v) => !v.dead && v.y < h + 110);
+  game.items = game.items.filter((i) => !i.dead && i.y < h + 70);
   game.blasts = game.blasts.filter((b) => b.age < b.life);
   game.particles = game.particles.filter((p) => p.age < p.life);
   game.comboText = game.comboText.filter((t) => t.age < t.life);
@@ -296,57 +305,58 @@ function update(dt) {
 }
 
 function drawBackground(w, h, t) {
-  const bounds = laneBounds();
+  const road = roadBounds();
   ctx.fillStyle = "#216f86";
-  ctx.fillRect(0, 0, w, h * 0.22);
+  ctx.fillRect(0, 0, road.left, h);
 
   ctx.fillStyle = "#1a7c5b";
-  ctx.fillRect(0, h * 0.18, w, h * 0.1);
+  ctx.fillRect(road.right, 0, w - road.right, h);
 
-  ctx.fillStyle = "#3c4644";
-  ctx.fillRect(0, bounds.top - 18, w, bounds.bottom - bounds.top + 36);
+  ctx.fillStyle = "#313a39";
+  ctx.fillRect(road.left - 18, 0, road.width + 36, h);
 
   ctx.fillStyle = "#525d59";
-  ctx.fillRect(0, bounds.top, w, bounds.bottom - bounds.top);
+  ctx.fillRect(road.left, 0, road.width, h);
 
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.44)";
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.42)";
   ctx.lineWidth = 4;
-  ctx.setLineDash([24, 26]);
-  ctx.lineDashOffset = -t * 160;
-  for (let y = bounds.top + (bounds.bottom - bounds.top) / 3; y < bounds.bottom; y += (bounds.bottom - bounds.top) / 3) {
+  ctx.setLineDash([24, 28]);
+  ctx.lineDashOffset = t * 170;
+  for (let x = road.left + road.width / 3; x < road.right; x += road.width / 3) {
     ctx.beginPath();
-    ctx.moveTo(0, y);
-    ctx.lineTo(w, y);
+    ctx.moveTo(x, -40);
+    ctx.lineTo(x, h + 40);
     ctx.stroke();
   }
   ctx.setLineDash([]);
 
-  ctx.fillStyle = "#d7d1aa";
-  ctx.fillRect(0, bounds.bottom + 18, w, Math.max(36, h - bounds.bottom - 18));
-
   ctx.fillStyle = "rgba(255,255,255,0.18)";
-  for (let i = 0; i < 16; i += 1) {
-    const x = ((i * 160 - t * 65) % (w + 190)) - 80;
-    ctx.fillRect(x, h * 0.11 + Math.sin(i + t) * 8, 70, 3);
+  for (let i = 0; i < 18; i += 1) {
+    const y = ((i * 130 + t * 72) % (h + 170)) - 90;
+    ctx.fillRect(road.left * 0.2 + Math.sin(i) * 18, y, Math.max(45, road.left * 0.62), 3);
   }
 
-  ctx.fillStyle = "#243030";
-  for (let i = 0; i < 9; i += 1) {
-    const x = ((i * 220 - t * 120) % (w + 260)) - 120;
-    drawTree(x, bounds.top - 30, 0.9 + (i % 3) * 0.1);
+  for (let i = 0; i < 10; i += 1) {
+    const y = ((i * 150 + t * 125) % (h + 210)) - 110;
+    const x = road.right + 28 + (i % 2) * 38;
+    drawTree(x, y, 0.9 + (i % 3) * 0.08);
   }
+
+  ctx.fillStyle = "rgba(215, 209, 170, 0.9)";
+  ctx.fillRect(road.left - 18, 0, 8, h);
+  ctx.fillRect(road.right + 10, 0, 8, h);
 }
 
 function drawTree(x, y, scale) {
   ctx.fillStyle = "#523f2b";
-  ctx.fillRect(x - 4 * scale, y - 28 * scale, 8 * scale, 34 * scale);
+  ctx.fillRect(x - 4 * scale, y + 12 * scale, 8 * scale, 34 * scale);
   ctx.fillStyle = "#2f8c57";
   ctx.beginPath();
-  ctx.arc(x, y - 42 * scale, 22 * scale, 0, Math.PI * 2);
+  ctx.arc(x, y, 22 * scale, 0, Math.PI * 2);
   ctx.fill();
   ctx.fillStyle = "#37a66a";
   ctx.beginPath();
-  ctx.arc(x + 12 * scale, y - 54 * scale, 15 * scale, 0, Math.PI * 2);
+  ctx.arc(x + 12 * scale, y - 12 * scale, 15 * scale, 0, Math.PI * 2);
   ctx.fill();
 }
 
@@ -363,31 +373,34 @@ function drawPlayer() {
   ctx.strokeStyle = "#101516";
   ctx.lineWidth = 5;
   ctx.beginPath();
-  ctx.arc(-18, 15, 13, 0, Math.PI * 2);
-  ctx.arc(23, 15, 13, 0, Math.PI * 2);
+  ctx.arc(0, -24, 12, 0, Math.PI * 2);
+  ctx.arc(0, 24, 12, 0, Math.PI * 2);
   ctx.stroke();
 
   ctx.strokeStyle = "#31d6a4";
   ctx.lineWidth = 5;
   ctx.beginPath();
-  ctx.moveTo(-18, 15);
-  ctx.lineTo(3, -10);
-  ctx.lineTo(23, 15);
-  ctx.lineTo(-3, 15);
+  ctx.moveTo(0, -24);
+  ctx.lineTo(-13, 2);
+  ctx.lineTo(0, 24);
+  ctx.lineTo(13, 2);
   ctx.closePath();
   ctx.stroke();
 
   ctx.fillStyle = "#f4d5b5";
   ctx.beginPath();
-  ctx.arc(4, -27, 10, 0, Math.PI * 2);
+  ctx.arc(0, -48, 10, 0, Math.PI * 2);
   ctx.fill();
 
   ctx.fillStyle = "#115e59";
-  ctx.fillRect(-8, -20, 24, 26);
+  ctx.beginPath();
+  ctx.roundRect(-13, -34, 26, 35, 7);
+  ctx.fill();
+
   ctx.fillStyle = "#ffffff";
-  ctx.fillRect(0, -39, 17, 8);
+  ctx.fillRect(-10, -59, 20, 8);
   ctx.fillStyle = "#ff5c5c";
-  ctx.fillRect(14, -37, 9, 4);
+  ctx.fillRect(7, -57, 9, 4);
 
   ctx.restore();
 }
@@ -414,7 +427,7 @@ function drawVillain(v) {
   ctx.quadraticCurveTo(0, 3, 11, 10);
   ctx.stroke();
 
-  if (v.name === "셀카봉러") {
+  if (v.name === "\uc140\uce74\ubd09\ub7ec") {
     ctx.strokeStyle = "#d7d7d7";
     ctx.lineWidth = 4;
     ctx.beginPath();
@@ -425,7 +438,7 @@ function drawVillain(v) {
     ctx.fillRect(34, -42, 17, 12);
   }
 
-  if (v.name === "킥보드폭주족") {
+  if (v.name === "\ud0a5\ubcf4\ub4dc\ud3ed\uc8fc\uc871") {
     ctx.strokeStyle = "#222";
     ctx.lineWidth = 4;
     ctx.beginPath();
@@ -452,7 +465,7 @@ function drawItem(item) {
   ctx.font = "800 21px Segoe UI Emoji, sans-serif";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillText(item.kind === "bell" ? "🔔" : "+", 0, 1);
+  ctx.fillText(item.kind === "bell" ? "\ud83d\udd14" : "+", 0, 1);
   ctx.restore();
 }
 
@@ -506,7 +519,7 @@ function draw() {
     ctx.fillStyle = "rgba(255,255,255,0.18)";
     ctx.font = "800 18px Malgun Gothic, sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText("한강 자전거길", w / 2, h * 0.52);
+    ctx.fillText("\ud55c\uac15 \uc790\uc804\uac70\uae38", w / 2, h * 0.6);
   }
 }
 
@@ -514,17 +527,17 @@ function endGame() {
   game.over = true;
   game.running = false;
   overlay.hidden = false;
-  overlayText.textContent = `${Math.floor(game.score)}m 주행. 다시 달려볼까요?`;
-  startBtn.textContent = "재출발";
+  overlayText.textContent = `${Math.floor(game.score)}m \uc8fc\ud589. \ub2e4\uc2dc \ub2ec\ub824\ubcfc\uae4c\uc694?`;
+  startBtn.textContent = "\uc7ac\ucd9c\ubc1c";
 }
 
 function togglePause() {
   if (!game.running || game.over) return;
   game.paused = !game.paused;
-  pauseBtn.textContent = game.paused ? "▶" : "Ⅱ";
+  pauseBtn.textContent = game.paused ? ">" : "II";
   overlay.hidden = !game.paused;
-  overlayText.textContent = "잠시 쉬는 중";
-  startBtn.textContent = "계속";
+  overlayText.textContent = "\uc7a0\uc2dc \uc26c\ub294 \uc911";
+  startBtn.textContent = "\uacc4\uc18d";
 }
 
 let last = performance.now();
@@ -571,7 +584,7 @@ startBtn.addEventListener("click", () => {
   if (game.paused && game.running) {
     game.paused = false;
     overlay.hidden = true;
-    pauseBtn.textContent = "Ⅱ";
+    pauseBtn.textContent = "II";
     return;
   }
   resetGame();
