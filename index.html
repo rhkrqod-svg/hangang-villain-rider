@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>한강 빌런 라이더</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="game-shell" aria-label="한강 빌런 라이더 게임">
+      <section class="topbar" aria-label="게임 상태">
+        <div>
+          <span class="label">거리</span>
+          <strong id="score">0m</strong>
+        </div>
+        <div>
+          <span class="label">체력</span>
+          <strong id="health">100</strong>
+        </div>
+        <div>
+          <span class="label">벨</span>
+          <strong id="bells">3</strong>
+        </div>
+        <button id="pauseBtn" class="icon-button" type="button" aria-label="일시정지">Ⅱ</button>
+      </section>
+
+      <canvas id="gameCanvas" width="1280" height="720" aria-label="게임 화면"></canvas>
+
+      <section class="touch-controls" aria-label="터치 조작">
+        <div class="dpad">
+          <button data-hold="up" aria-label="위로 이동">▲</button>
+          <button data-hold="left" aria-label="왼쪽 이동">◀</button>
+          <button data-hold="down" aria-label="아래로 이동">▼</button>
+          <button data-hold="right" aria-label="오른쪽 이동">▶</button>
+        </div>
+        <button id="bellBtn" class="bell-button" type="button" aria-label="벨 울리기">🔔</button>
+      </section>
+
+      <div id="overlay" class="overlay">
+        <h1>한강 빌런 라이더</h1>
+        <p id="overlayText">자전거길을 지키며 끝까지 달려보세요.</p>
+        <button id="startBtn" type="button">출발</button>
+      </div>
+    </main>
+
+    <script src="./game.js"></script>
+  </body>
+</html>
