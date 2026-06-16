@@ -263,7 +263,7 @@ function startBoss() {
     phase: 0,
     hurt: 0,
   };
-  game.nextBossAt += 5000;
+  game.nextBossAt += 10000;
   game.villains = [];
   game.items = [];
   game.bossProjectiles = [];
