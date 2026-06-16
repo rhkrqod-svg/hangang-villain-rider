@@ -238,7 +238,8 @@ button {
     inset 0 1px 0 rgba(255, 255, 255, 0.32);
 }
 
-.special-button:disabled {
+.special-button:disabled,
+.bell-button:disabled {
   cursor: not-allowed;
   opacity: 0.48;
 }

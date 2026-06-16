@@ -18,6 +18,7 @@ const leaderboardEl = document.getElementById("leaderboard");
 const keys = new Set();
 const hold = new Set();
 const CHARACTER_SCALE = 0.7;
+const BELL_COOLDOWN = 1.5;
 const LEADERBOARD_KEY = "hangang-villain-rider-leaderboard";
 const MAX_LEADERBOARD = 10;
 const MAX_NAME_UNITS = 20;
@@ -101,6 +102,7 @@ const game = {
   score: 0,
   health: 100,
   bells: 10,
+  bellCooldown: 0,
   speed: 280,
   spawnTimer: 0,
   itemTimer: 2.5,
@@ -146,6 +148,7 @@ function resetGame() {
   game.score = 0;
   game.health = 100;
   game.bells = 10;
+  game.bellCooldown = 0;
   game.speed = 280;
   game.spawnTimer = 1.2;
   game.itemTimer = 3.1;
@@ -182,6 +185,7 @@ function updateHud() {
   scoreEl.title = `${Math.floor(game.score)}m`;
   healthEl.textContent = Math.max(0, Math.round(game.health));
   bellsEl.textContent = game.bells;
+  bellBtn.disabled = !game.running || game.paused || game.over || game.bells <= 0 || game.bellCooldown > 0;
   specialBtn.disabled = !game.running || game.paused || game.over || game.bells < 10 || game.riderTimer > 0 || game.transformTimer > 0;
   specialBtn.classList.toggle("ready", !specialBtn.disabled);
   specialBtn.textContent = game.riderTimer > 0 ? Math.ceil(Math.min(10, game.riderTimer)) : "\ubcc0\uc2e0";
@@ -464,8 +468,9 @@ function spawnMarathonWave(y, offsetSeed) {
 }
 
 function ringBell() {
-  if (!game.running || game.paused || game.over || game.bells <= 0) return;
+  if (!game.running || game.paused || game.over || game.bells <= 0 || game.bellCooldown > 0) return;
   game.bells -= 1;
+  game.bellCooldown = BELL_COOLDOWN;
   game.blasts.push({
     x: game.player.x,
     y: game.player.y - 58,
@@ -712,6 +717,7 @@ function update(dt) {
   game.transformTimer = Math.max(0, game.transformTimer - dt);
   game.riderTimer = Math.max(0, game.riderTimer - dt);
   game.riderFlash = Math.max(0, game.riderFlash - dt);
+  game.bellCooldown = Math.max(0, game.bellCooldown - dt);
   game.time += dt;
   game.score += bossActive || marathonActive ? 0 : dt * (22 + game.time * 0.65) * (riderActive ? 2.6 : 1);
   const distanceSpeed = game.score / 250;
