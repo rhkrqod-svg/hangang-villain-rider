@@ -19,7 +19,6 @@ const villainTypes = [
   { name: "\ud0a5\ubcf4\ub4dc\ud3ed\uc8fc\uc871", color: "#ffc857", hp: 1, radius: 22, wobble: 1.3, score: 95 },
   { name: "\uc140\uce74\ubd09\ub7ec", color: "#a78bfa", hp: 1, radius: 24, wobble: 0.45, score: 75 },
   { name: "\uae38\ub9c9\uc218\ub2e4\ub2e8", color: "#f97316", hp: 2, radius: 31, wobble: 0.35, score: 140 },
-  { name: "\ub3d7\uc790\ub9ac\ud655\uc7a5\ub7ec", color: "#38bdf8", hp: 2, radius: 34, wobble: 0.2, score: 150 },
   { name: "\ub178\ube0c\ub808\ub07c \ud53d\uc2dc", color: "#111827", hp: 2, radius: 29, wobble: 1.9, score: 170, skid: true },
 ];
 
