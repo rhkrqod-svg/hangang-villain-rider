@@ -19,6 +19,7 @@ const keys = new Set();
 const hold = new Set();
 const CHARACTER_SCALE = 0.7;
 const BELL_COOLDOWN = 1.5;
+const MAX_BELLS = 50;
 const LEADERBOARD_KEY = "hangang-villain-rider-leaderboard";
 const MAX_LEADERBOARD = 10;
 const MAX_NAME_UNITS = 20;
@@ -578,7 +579,7 @@ function defeatBoss() {
 
 function pickup(item) {
   if (item.kind === "bell") {
-    game.bells = Math.min(20, game.bells + 2);
+    game.bells = Math.min(MAX_BELLS, game.bells + 2);
     game.comboText.push({ text: "\ubca8 +2", x: item.x, y: item.y - 28, age: 0, life: 0.8, color: "#fff0b3" });
     burst(item.x, item.y, "#ffc857", 12, 180);
   } else {
