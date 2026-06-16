@@ -40,6 +40,15 @@
       <div id="overlay" class="overlay">
         <h1>한강 빌런 라이더</h1>
         <p id="overlayText">자전거길을 지키며 끝까지 달려보세요.</p>
+        <div id="nameEntry" class="name-entry" hidden>
+          <label for="playerName">랭킹 이름</label>
+          <div>
+            <input id="playerName" type="text" maxlength="20" autocomplete="off" placeholder="이름 입력" />
+            <button id="saveScoreBtn" type="button">등록</button>
+          </div>
+          <small>영어 20자 / 한글 10자까지</small>
+        </div>
+        <ol id="leaderboard" class="leaderboard" aria-label="거리 순위"></ol>
         <button id="startBtn" type="button">출발</button>
       </div>
     </main>

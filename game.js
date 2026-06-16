@@ -10,10 +10,18 @@ const startBtn = document.getElementById("startBtn");
 const pauseBtn = document.getElementById("pauseBtn");
 const bellBtn = document.getElementById("bellBtn");
 const specialBtn = document.getElementById("specialBtn");
+const nameEntry = document.getElementById("nameEntry");
+const playerNameInput = document.getElementById("playerName");
+const saveScoreBtn = document.getElementById("saveScoreBtn");
+const leaderboardEl = document.getElementById("leaderboard");
 
 const keys = new Set();
 const hold = new Set();
 const CHARACTER_SCALE = 0.7;
+const LEADERBOARD_KEY = "hangang-villain-rider-leaderboard";
+const MAX_LEADERBOARD = 10;
+const MAX_NAME_UNITS = 20;
+let pendingScore = null;
 
 const gameArt = {
   background: new Image(),
@@ -162,6 +170,8 @@ function resetGame() {
   const road = roadBounds();
   game.player.x = (road.left + road.right) / 2;
   game.player.y = road.bottom - 82;
+  pendingScore = null;
+  nameEntry.hidden = true;
   overlay.hidden = true;
   pauseBtn.textContent = "II";
   updateHud();
@@ -187,6 +197,105 @@ function formatDistanceDetail(distance) {
   const meters = Math.floor(distance);
   if (meters < 1000) return `${meters}m`;
   return `${(meters / 1000).toFixed(1)}km (${meters}m)`;
+}
+
+function nameUnit(char) {
+  return /[^\x00-\x7F]/.test(char) ? 2 : 1;
+}
+
+function limitPlayerName(value) {
+  let units = 0;
+  let result = "";
+  for (const char of Array.from(value)) {
+    const cost = nameUnit(char);
+    if (units + cost > MAX_NAME_UNITS) break;
+    units += cost;
+    result += char;
+  }
+  return result;
+}
+
+function cleanPlayerName(value) {
+  const name = limitPlayerName(value.replace(/\s+/g, " ").trim());
+  return name || "\ub77c\uc774\ub354";
+}
+
+function loadLeaderboard() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(LEADERBOARD_KEY) || "[]");
+    if (!Array.isArray(saved)) return [];
+    return saved
+      .filter((entry) => entry && typeof entry.name === "string" && Number.isFinite(entry.score))
+      .map((entry) => ({
+        name: cleanPlayerName(entry.name),
+        score: Math.max(0, Math.floor(entry.score)),
+        date: Number.isFinite(entry.date) ? entry.date : 0,
+      }))
+      .sort((a, b) => b.score - a.score || a.date - b.date)
+      .slice(0, MAX_LEADERBOARD);
+  } catch {
+    return [];
+  }
+}
+
+function saveLeaderboard(entries) {
+  try {
+    localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(entries.slice(0, MAX_LEADERBOARD)));
+  } catch {
+    // Ranking still works during the current screen even if browser storage is blocked.
+  }
+}
+
+function rankIndexFor(score, entries = loadLeaderboard()) {
+  const meters = Math.floor(score);
+  const betterIndex = entries.findIndex((entry) => meters > entry.score);
+  if (betterIndex >= 0) return betterIndex;
+  return entries.length < MAX_LEADERBOARD ? entries.length : -1;
+}
+
+function renderLeaderboard() {
+  const entries = loadLeaderboard();
+  leaderboardEl.replaceChildren();
+  for (let i = 0; i < MAX_LEADERBOARD; i += 1) {
+    const entry = entries[i];
+    const row = document.createElement("li");
+    const rank = document.createElement("span");
+    const name = document.createElement("span");
+    const distance = document.createElement("span");
+    rank.className = "rank";
+    name.className = "name";
+    distance.className = "distance";
+    rank.textContent = `${i + 1}\uc704`;
+    name.textContent = entry ? entry.name : "\ube44\uc5b4 \uc788\uc74c";
+    distance.textContent = entry ? formatDistance(entry.score) : "-";
+    row.append(rank, name, distance);
+    leaderboardEl.append(row);
+  }
+}
+
+function submitLeaderboardName() {
+  if (pendingScore === null) return;
+  const entries = loadLeaderboard();
+  const rankIndex = rankIndexFor(pendingScore, entries);
+  if (rankIndex < 0) {
+    pendingScore = null;
+    nameEntry.hidden = true;
+    renderLeaderboard();
+    return;
+  }
+
+  entries.splice(rankIndex, 0, {
+    name: cleanPlayerName(playerNameInput.value),
+    score: Math.floor(pendingScore),
+    date: Date.now(),
+  });
+  const ranked = entries.slice(0, MAX_LEADERBOARD);
+  saveLeaderboard(ranked);
+  pendingScore = null;
+  nameEntry.hidden = true;
+  overlayText.textContent = "\ub7ad\ud0b9 \ub4f1\ub85d \uc644\ub8cc! \ub2e4\uc2dc \ub2ec\ub824\ubcfc\uae4c\uc694?";
+  startBtn.textContent = "\uc7ac\ucd9c\ubc1c";
+  renderLeaderboard();
 }
 
 function rand(min, max) {
@@ -2062,8 +2171,21 @@ function endGame() {
   game.over = true;
   game.running = false;
   overlay.hidden = false;
-  overlayText.textContent = `${formatDistanceDetail(game.score)} \uc8fc\ud589. \ub2e4\uc2dc \ub2ec\ub824\ubcfc\uae4c\uc694?`;
+  const finalScore = Math.floor(game.score);
+  const rankIndex = rankIndexFor(finalScore);
+  if (rankIndex >= 0) {
+    pendingScore = finalScore;
+    nameEntry.hidden = false;
+    playerNameInput.value = "";
+    overlayText.textContent = `${formatDistanceDetail(finalScore)} \uc8fc\ud589. ${rankIndex + 1}\uc704 \uae30\ub85d! \uc774\ub984\uc744 \uc785\ub825\ud558\uc138\uc694.`;
+    setTimeout(() => playerNameInput.focus(), 0);
+  } else {
+    pendingScore = null;
+    nameEntry.hidden = true;
+    overlayText.textContent = `${formatDistanceDetail(finalScore)} \uc8fc\ud589. \ub2e4\uc2dc \ub2ec\ub824\ubcfc\uae4c\uc694?`;
+  }
   startBtn.textContent = "\uc7ac\ucd9c\ubc1c";
+  renderLeaderboard();
 }
 
 function togglePause() {
@@ -2071,8 +2193,10 @@ function togglePause() {
   game.paused = !game.paused;
   pauseBtn.textContent = game.paused ? ">" : "II";
   overlay.hidden = !game.paused;
+  nameEntry.hidden = true;
   overlayText.textContent = "\uc7a0\uc2dc \uc26c\ub294 \uc911";
   startBtn.textContent = "\uacc4\uc18d";
+  renderLeaderboard();
 }
 
 let last = performance.now();
@@ -2094,6 +2218,7 @@ window.addEventListener("resize", () => {
 });
 
 window.addEventListener("keydown", (event) => {
+  if (event.target === playerNameInput) return;
   if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"].includes(event.code)) {
     event.preventDefault();
   }
@@ -2120,10 +2245,25 @@ document.querySelectorAll("[data-hold]").forEach((button) => {
   button.addEventListener("pointerleave", release);
 });
 
+playerNameInput.addEventListener("input", () => {
+  const limited = limitPlayerName(playerNameInput.value);
+  if (playerNameInput.value !== limited) playerNameInput.value = limited;
+});
+
+playerNameInput.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    submitLeaderboardName();
+  }
+});
+
+saveScoreBtn.addEventListener("click", submitLeaderboardName);
+
 startBtn.addEventListener("click", () => {
   if (game.paused && game.running) {
     game.paused = false;
     overlay.hidden = true;
+    nameEntry.hidden = true;
     pauseBtn.textContent = "II";
     return;
   }
@@ -2135,5 +2275,6 @@ specialBtn.addEventListener("click", useSpecial);
 
 fitCanvas();
 updateHud();
+renderLeaderboard();
 draw();
 requestAnimationFrame(frame);

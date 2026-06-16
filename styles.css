@@ -252,6 +252,7 @@ button {
   align-content: center;
   gap: 18px;
   padding: 22px;
+  overflow: auto;
   background:
     linear-gradient(180deg, rgba(7, 19, 23, 0.48), rgba(6, 10, 11, 0.84));
   text-align: center;
@@ -292,6 +293,113 @@ button {
   box-shadow:
     0 12px 28px rgba(49, 214, 164, 0.28),
     inset 0 1px 0 rgba(255, 255, 255, 0.38);
+}
+
+.name-entry {
+  display: grid;
+  gap: 7px;
+  width: min(360px, 92vw);
+  padding: 12px;
+  border: 1px solid rgba(104, 229, 255, 0.28);
+  border-radius: 8px;
+  background: rgba(6, 14, 17, 0.76);
+}
+
+.name-entry[hidden] {
+  display: none;
+}
+
+.name-entry label {
+  color: #dffcff;
+  font-size: 14px;
+  font-weight: 900;
+  text-align: left;
+}
+
+.name-entry div {
+  display: grid;
+  grid-template-columns: 1fr 76px;
+  gap: 8px;
+}
+
+.name-entry input {
+  width: 100%;
+  min-width: 0;
+  height: 44px;
+  padding: 0 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  background: rgba(3, 8, 10, 0.86);
+  color: #ffffff;
+  font: 800 16px "Malgun Gothic", system-ui, sans-serif;
+  outline: none;
+}
+
+.name-entry input:focus {
+  border-color: rgba(104, 229, 255, 0.74);
+  box-shadow: 0 0 0 3px rgba(104, 229, 255, 0.16);
+}
+
+.name-entry button {
+  min-width: 0;
+  width: 76px;
+  height: 44px;
+  padding: 0;
+  font-size: 15px;
+}
+
+.name-entry small {
+  color: #a9c7bf;
+  font-size: 12px;
+  text-align: left;
+}
+
+.leaderboard {
+  display: grid;
+  gap: 4px;
+  width: min(360px, 92vw);
+  max-height: min(34vh, 284px);
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  list-style: none;
+}
+
+.leaderboard li {
+  display: grid;
+  grid-template-columns: 36px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 30px;
+  padding: 5px 9px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #e8fff7;
+  font-size: 13px;
+}
+
+.leaderboard .rank {
+  color: #ffd66d;
+  font-weight: 1000;
+}
+
+.leaderboard .name {
+  overflow: hidden;
+  font-weight: 900;
+  text-align: left;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.leaderboard .distance {
+  color: #dffcff;
+  font-weight: 900;
+}
+
+.leaderboard .empty {
+  grid-template-columns: 1fr;
+  color: #a9c7bf;
+  text-align: center;
 }
 
 @media (min-width: 820px) {
