@@ -203,7 +203,12 @@ button {
   width: 62px;
   height: 62px;
   border-radius: 8px;
-  transform: translateY(-8px);
+  transform: translateY(-24px);
+}
+
+.bell-button:active,
+.special-button:active {
+  transform: translateY(-21px) scale(0.98);
 }
 
 .bell-button {
